@@ -72,7 +72,7 @@ export default function App() {
     };
     if (filters.query) p.q = filters.query;
     if (filters.category) p.categories = filters.category;
-    if (filters.pbrOnly) p.pbr_type = 'true';
+    if (filters.pbrOnly) p.pbr_type = 'pbr';
     if (filters.animatedOnly) p.animated = 'true';
     if (filters.riggedOnly) p.rigged = 'true';
     if (filters.staffpickedOnly) p.staffpicked = 'true';

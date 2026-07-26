@@ -42,46 +42,19 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const isSSR = typeof window === 'undefined' || typeof document === 'undefined';
-
-  if (isSSR) {
-    return (
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          <HeadContent />
-        </head>
-        <body className="bg-background text-foreground min-h-screen font-sans antialiased selection:bg-primary selection:text-primary-foreground">
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider defaultTheme="dark" storageKey="theme">
-              <TooltipProvider>{children}</TooltipProvider>
-            </ThemeProvider>
-          </QueryClientProvider>
-          <Scripts />
-        </body>
-      </html>
-    );
-  }
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <HeadContent />
-      <ThemeProvider defaultTheme="dark" storageKey="theme">
-        <TooltipProvider>
-          {children}
-          <Scripts />
-        </TooltipProvider>
-      </ThemeProvider>
-      <TanStackDevtools
-        config={{
-          position: 'bottom-right',
-        }}
-        plugins={[
-          {
-            name: 'TanStack Router',
-            render: <TanStackRouterDevtoolsPanel />,
-          },
-        ]}
-      />
-    </QueryClientProvider>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <HeadContent />
+      </head>
+      <body className="bg-background text-foreground min-h-screen font-sans antialiased selection:bg-primary selection:text-primary-foreground">
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="dark" storageKey="theme">
+            <TooltipProvider>{children}</TooltipProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+        <Scripts />
+      </body>
+    </html>
   );
 }
