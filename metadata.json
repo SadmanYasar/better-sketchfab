@@ -1,0 +1,6 @@
+{
+  "name": "Sketchfab Model Inspector & Explorer",
+  "description": "Explore downloadable Sketchfab 3D models with detailed geometry, materials, PBR, rigging, UVs, and animation metadata for 3D artists.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
