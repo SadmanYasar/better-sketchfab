@@ -1,14 +1,16 @@
-import React from 'react';
-import { Search, Box, Key, LayoutGrid, Table, Sparkles, Filter } from 'lucide-react';
-import { SearchFilterState } from '../types';
+import { Box, Key, LayoutGrid, Search, Table } from 'lucide-react';
+import type React from 'react';
+import { ThemeToggle } from '#/components/theme-toggle';
+import { Button } from '#/components/ui/button';
+import { Input } from '#/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip';
+import type { SearchFilterState } from '../types';
 
 interface NavbarProps {
   filters: SearchFilterState;
   onFilterChange: (updates: Partial<SearchFilterState>) => void;
   onOpenTokenModal: () => void;
   hasToken: boolean;
-  currentPage: number;
-  currentCount: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -16,121 +18,118 @@ export const Navbar: React.FC<NavbarProps> = ({
   onFilterChange,
   onOpenTokenModal,
   hasToken,
-  currentPage,
-  currentCount
 }) => {
   return (
-    <header className="sticky top-0 z-40 bg-[#0A0A0B]/90 backdrop-blur-md border-b border-zinc-800/80 px-4 lg:px-8 py-3 transition-all">
+    <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border px-4 lg:px-8 py-2.5">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 md:gap-6">
-        
         {/* Brand Header */}
         <div className="flex items-center justify-between w-full md:w-auto">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/25 ring-1 ring-white/20">
+            <div className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-md shrink-0">
               <Box className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-bold text-zinc-100 tracking-tight text-base sm:text-lg">
-                  Sketchfab Inspector
+                <h1 className="font-bold text-foreground tracking-tight text-base sm:text-lg">
+                  Better Sketchfab
                 </h1>
-                <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] uppercase font-mono font-bold px-1.5 py-0.5 rounded tracking-wider">
-                  High Density
-                </span>
               </div>
-              <p className="text-xs text-zinc-400 hidden sm:block font-sans">
-                Deep Geometry & Metadata Analytics for 3D Artists
+              <p className="text-xs text-muted-foreground hidden sm:block font-sans">
+                Extended filters and sorts
               </p>
             </div>
           </div>
 
-          {/* Mobile view toggle */}
+          {/* Mobile Actions */}
           <div className="flex items-center gap-2 md:hidden">
-            <button
+            <Button
+              variant="outline"
+              size="icon"
               onClick={onOpenTokenModal}
-              className={`p-2 rounded-lg border text-xs flex items-center gap-1.5 transition-colors ${
-                hasToken 
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
-                  : 'bg-[#111113] border-zinc-800 text-zinc-400'
+              className={`h-9 w-9 border-border ${
+                hasToken
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                  : 'bg-background text-muted-foreground'
               }`}
             >
               <Key className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Search Input Bar */}
         <div className="relative w-full md:max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-          <input
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
             type="text"
             value={filters.query}
             onChange={(e) => onFilterChange({ query: e.target.value })}
-            placeholder="Search downloadable 3D models (e.g., Mech, Drone, Low Poly, Torii)..."
-            className="w-full bg-[#111113] border border-zinc-800 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-inner font-sans"
+            placeholder="Search 3D models (e.g. Mech, Drone, Low Poly)..."
+            className="w-full bg-secondary/40 border-border rounded-xl pl-10 pr-14 py-2 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary font-sans"
           />
           {filters.query && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => onFilterChange({ query: '' })}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-200 bg-zinc-800 px-1.5 py-0.5 rounded"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 text-[11px] text-muted-foreground hover:text-foreground px-2"
             >
               Clear
-            </button>
+            </Button>
           )}
         </div>
 
-        {/* Controls & Mode Switches */}
+        {/* Controls, View Switches & Theme Toggle */}
         <div className="flex items-center justify-between w-full md:w-auto gap-3">
-          
-          {/* View Mode Toggle */}
-          <div className="flex items-center bg-[#111113] border border-zinc-800 rounded-xl p-1 gap-1">
-            <button
+          {/* View Mode Switcher */}
+          <div className="flex items-center bg-secondary/40 border border-border rounded-xl p-1 gap-1">
+            <Button
+              variant={filters.viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
               onClick={() => onFilterChange({ viewMode: 'grid' })}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                filters.viewMode === 'grid'
-                  ? 'bg-indigo-600 text-white font-semibold shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
+              className="h-7 px-3 text-xs gap-1.5 rounded-lg"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Grid View</span>
-            </button>
-            <button
+              <span>Grid</span>
+            </Button>
+            <Button
+              variant={filters.viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
               onClick={() => onFilterChange({ viewMode: 'table' })}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                filters.viewMode === 'table'
-                  ? 'bg-indigo-600 text-white font-semibold shadow-sm'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
+              className="h-7 px-3 text-xs gap-1.5 rounded-lg"
             >
               <Table className="w-3.5 h-3.5" />
-              <span>Artist Matrix</span>
-            </button>
+              <span>Matrix</span>
+            </Button>
           </div>
 
-          {/* Token Status & Modal Launcher */}
-          <button
-            onClick={onOpenTokenModal}
-            className={`hidden md:flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium border transition-all ${
-              hasToken
-                ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300 hover:bg-emerald-900/50'
-                : 'bg-[#111113] border-zinc-800 text-zinc-300 hover:bg-zinc-800'
-            }`}
-            title="Configure Sketchfab OAuth/API Token"
-          >
-            <Key className={`w-3.5 h-3.5 ${hasToken ? 'text-emerald-400' : 'text-zinc-400'}`} />
-            <span>{hasToken ? 'Token Active' : 'API Token'}</span>
-            {hasToken && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />}
-          </button>
+          <ThemeToggle />
 
-          {/* Page & Models Badge */}
-          <div className="text-xs text-zinc-400 bg-[#111113] border border-zinc-800 px-3 py-2 rounded-xl flex items-center gap-1.5 font-mono">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Page <strong className="text-zinc-200">{currentPage}</strong> ({currentCount} models)</span>
-          </div>
-
+          {/* Token Status Modal Launcher */}
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant={hasToken ? 'secondary' : 'outline'}
+                  size="sm"
+                  onClick={onOpenTokenModal}
+                  className="hidden md:flex items-center gap-2 h-9 rounded-xl text-xs font-medium"
+                >
+                  <Key
+                    className={`w-3.5 h-3.5 ${hasToken ? 'text-emerald-500' : 'text-muted-foreground'}`}
+                  />
+                  <span>{hasToken ? 'Token Active' : 'API Token'}</span>
+                  {hasToken && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  )}
+                </Button>
+              }
+            />
+            <TooltipContent>
+              <p>Configure Sketchfab OAuth2 or Personal API Key</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
-
       </div>
     </header>
   );

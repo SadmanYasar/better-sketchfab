@@ -95,6 +95,7 @@ export interface SearchFilterState {
   animatedOnly: boolean;
   riggedOnly: boolean;
   soundOnly: boolean;
+  unsafeSearch: boolean;
   license?: string;
   maxFaces?: number; // Low poly / High poly filter
   minFaces?: number;

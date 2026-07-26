@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Navbar } from './components/Navbar';
-import { FilterBar } from './components/FilterBar';
-import { ModelCard } from './components/ModelCard';
-import { ModelTableView } from './components/ModelTableView';
-import { ModelDetailModal } from './components/ModelDetailModal';
-import { TokenModal } from './components/TokenModal';
-import { Pagination } from './components/Pagination';
-import { SearchFilterState, SketchfabModel } from './types';
+import { Box, RefreshCw, Sparkles, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Button } from '#/components/ui/button';
+import { Skeleton } from '#/components/ui/skeleton';
+import { FilterBar } from './components/filter-bar';
+import { ModelCard } from './components/model-card';
+import { ModelDetailModal } from './components/model-detail-modal';
+import { ModelTableView } from './components/model-table-view';
+import { Navbar } from './components/navbar';
+import { Pagination } from './components/pagination';
+import { TokenModal } from './components/token-modal';
 import { FEATURED_MODELS } from './data/mockModels';
-import { Box, RefreshCw, AlertCircle, Sparkles, Layers, SlidersHorizontal, Info } from 'lucide-react';
+import type { SearchFilterState, SketchfabModel } from './types';
 
 const PAGE_SIZE = 24;
 
@@ -42,14 +44,25 @@ export default function App() {
     animatedOnly: false,
     riggedOnly: false,
     soundOnly: false,
+    unsafeSearch: false,
     license: '',
     maxFaces: undefined,
     minFaces: undefined,
-    viewMode: 'grid'
+    viewMode: 'grid',
   });
 
-  const [models, setModels] = useState<SketchfabModel[]>(FEATURED_MODELS);
+  const [bannerDismissed, setBannerDismissed] = useState<boolean>(() => {
+    return localStorage.getItem('sketchfab_banner_dismissed') === 'true';
+  });
+
+  const handleDismissBanner = () => {
+    setBannerDismissed(true);
+    try {
+      localStorage.setItem('sketchfab_banner_dismissed', 'true');
+    } catch (_e) {}
+  };
   const [loading, setLoading] = useState(false);
+  const [models, setModels] = useState<SketchfabModel[]>([]);
   const [selectedModel, setSelectedModel] = useState<SketchfabModel | null>(null);
 
   // Pagination state
@@ -69,7 +82,7 @@ export default function App() {
   const handleFilterChange = (updates: Partial<SearchFilterState>) => {
     cursorsRef.current = { 1: null };
     setCurrentPage(1);
-    setFilters(prev => ({ ...prev, ...updates }));
+    setFilters((prev) => ({ ...prev, ...updates }));
   };
 
   const handleResetFilters = () => {
@@ -85,23 +98,24 @@ export default function App() {
       animatedOnly: false,
       riggedOnly: false,
       soundOnly: false,
+      unsafeSearch: false,
       license: '',
       maxFaces: undefined,
       minFaces: undefined,
-      viewMode: filters.viewMode
+      viewMode: filters.viewMode,
     });
   };
 
   const handleNextPage = () => {
     if (hasNextPage) {
-      setCurrentPage(prev => prev + 1);
+      setCurrentPage((prev) => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(prev => prev - 1);
+      setCurrentPage((prev) => prev - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -113,7 +127,7 @@ export default function App() {
       const activeCursor = cursorsRef.current[currentPage] || null;
       const params = new URLSearchParams({
         count: String(PAGE_SIZE),
-        sort_by: filters.sortBy
+        sort_by: filters.sortBy,
       });
 
       if (filters.query) params.append('q', filters.query);
@@ -132,15 +146,19 @@ export default function App() {
       if (filters.maxFaces !== undefined) params.append('max_face_count', String(filters.maxFaces));
       if (filters.minFaces !== undefined) params.append('min_face_count', String(filters.minFaces));
       if (activeCursor) params.append('cursor', activeCursor);
+      if (filters.unsafeSearch) params.append('unsafe_search', 'true');
 
       const res = await fetch(`/api/sketchfab/search?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         let items: SketchfabModel[] = data.results || [];
 
-        // Apply client-side maxFaces filtering if set
+        // Apply client-side face count filtering if set
+        if (filters.minFaces !== undefined) {
+          items = items.filter((m) => m.faceCount >= (filters.minFaces || 0));
+        }
         if (filters.maxFaces !== undefined) {
-          items = items.filter(m => m.faceCount <= (filters.maxFaces || 20000));
+          items = items.filter((m) => m.faceCount <= (filters.maxFaces || 500000));
         }
 
         // Apply client-side sorting for exact consistency (especially for polycount sorting)
@@ -153,7 +171,9 @@ export default function App() {
         } else if (filters.sortBy === '-viewCount') {
           items.sort((a, b) => b.viewCount - a.viewCount);
         } else if (filters.sortBy === '-publishedAt') {
-          items.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+          items.sort(
+            (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+          );
         }
 
         setModels(items);
@@ -170,14 +190,16 @@ export default function App() {
         let items = [...FEATURED_MODELS];
         if (filters.query) {
           const q = filters.query.toLowerCase();
-          items = items.filter(m => m.name.toLowerCase().includes(q) || m.description.toLowerCase().includes(q));
+          items = items.filter(
+            (m) => m.name.toLowerCase().includes(q) || m.description.toLowerCase().includes(q),
+          );
         }
         if (filters.category) {
-          items = items.filter(m => m.categories.some(c => c.slug === filters.category));
+          items = items.filter((m) => m.categories.some((c) => c.slug === filters.category));
         }
-        if (filters.pbrOnly) items = items.filter(m => m.isPbr);
-        if (filters.animatedOnly) items = items.filter(m => (m.animationCount || 0) > 0);
-        if (filters.maxFaces) items = items.filter(m => m.faceCount <= filters.maxFaces!);
+        if (filters.pbrOnly) items = items.filter((m) => m.isPbr);
+        if (filters.animatedOnly) items = items.filter((m) => (m.animationCount || 0) > 0);
+        if (filters.maxFaces) items = items.filter((m) => m.faceCount <= filters.maxFaces!);
 
         if (filters.sortBy === '-faceCount') {
           items.sort((a, b) => b.faceCount - a.faceCount);
@@ -188,7 +210,9 @@ export default function App() {
         } else if (filters.sortBy === '-viewCount') {
           items.sort((a, b) => b.viewCount - a.viewCount);
         } else if (filters.sortBy === '-publishedAt') {
-          items.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+          items.sort(
+            (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+          );
         }
 
         const startIndex = (currentPage - 1) * PAGE_SIZE;
@@ -212,16 +236,13 @@ export default function App() {
   }, [fetchModels]);
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] text-zinc-100 flex flex-col font-sans selection:bg-indigo-600 selection:text-white">
-      
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary selection:text-primary-foreground">
       {/* Top Header */}
       <Navbar
         filters={filters}
         onFilterChange={handleFilterChange}
         onOpenTokenModal={() => setIsTokenModalOpen(true)}
         hasToken={Boolean(token)}
-        currentPage={currentPage}
-        currentCount={models.length}
       />
 
       {/* Filter and Technical Controls Bar */}
@@ -233,54 +254,132 @@ export default function App() {
 
       {/* Main Body Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-5 space-y-5">
-        
         {/* Banner callout for 3D Artists */}
-        <div className="bg-[#111113] border border-zinc-800 rounded-2xl p-4 sm:p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-              <h2 className="text-xs sm:text-sm font-bold text-white tracking-wide uppercase font-mono">
-                Sketchfab Technical Geometry & Shading Inspector
-              </h2>
+        {!bannerDismissed ? (
+          <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl relative group">
+            <div className="space-y-1 pr-6 sm:pr-0">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <h2 className="text-xs sm:text-sm font-bold text-foreground tracking-wide uppercase font-mono">
+                  Sketchfab Technical Geometry &amp; Shading Inspector
+                </h2>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed max-w-3xl">
+                Inspect downloadable models with live triangle/vertex counts, PBR shader types,
+                materials, UV layers, vertex colors, animation clips, skeletal rigging, and remote
+                GLTF archive manifest extraction.
+              </p>
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed max-w-3xl">
-              Inspect downloadable models with live triangle/vertex counts, PBR shader types, materials, UV layers, vertex colors, animation clips, skeletal rigging, and remote GLTF archive manifest extraction.
-            </p>
+
+            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+              <Button
+                onClick={() => setIsTokenModalOpen(true)}
+                variant="secondary"
+                className="text-xs font-semibold shrink-0 gap-1.5 rounded-xl border border-border"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <span>{token ? 'Configure Token' : 'Unlock S3 Manifest Inspector'}</span>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDismissBanner}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+                title="Dismiss Banner"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
+        ) : (
+          <div className="bg-secondary/30 border border-border/60 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+            <p className="flex items-center gap-2">
+              <span>Inspector banner hidden.</span>
+              <span>
+                To configure your API key, click the{' '}
+                <button
+                  type="button"
+                  onClick={() => setIsTokenModalOpen(true)}
+                  className="text-primary hover:underline font-semibold cursor-pointer"
+                >
+                  API Token / Key
+                </button>{' '}
+                button in the top navigation bar.
+              </span>
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setBannerDismissed(false);
+                try {
+                  localStorage.removeItem('sketchfab_banner_dismissed');
+                } catch (_e) {}
+              }}
+              className="text-[11px] text-muted-foreground hover:text-foreground underline shrink-0 cursor-pointer"
+            >
+              Show Banner
+            </button>
+          </div>
+        )}
 
-          <button
-            onClick={() => setIsTokenModalOpen(true)}
-            className="self-start sm:self-center px-3.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold shrink-0 transition-all flex items-center gap-1.5"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>{token ? 'Configure Token' : 'Unlock S3 Manifest Inspector'}</span>
-          </button>
-        </div>
-
-        {/* Loading Spinner */}
+        {/* Skeleton Card Loaders */}
         {loading && (
-          <div className="py-16 flex flex-col items-center justify-center space-y-3">
-            <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
-            <p className="text-xs text-zinc-400 font-medium">Loading Sketchfab 3D Models...</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div
+                key={`skeleton-card-${idx}`}
+                className="relative aspect-square rounded-2xl overflow-hidden border border-border bg-muted"
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute top-2.5 left-2.5 flex items-center gap-1 z-10">
+                  <Skeleton className="h-4 w-8 rounded-md" />
+                  <Skeleton className="h-4 w-6 rounded-md" />
+                </div>
+                <div className="absolute top-2.5 right-2.5 z-10">
+                  <Skeleton className="h-4 w-10 rounded-md" />
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-3 z-10 space-y-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <Skeleton className="h-4 w-12 rounded-md" />
+                    <Skeleton className="h-4 w-12 rounded-md" />
+                    <Skeleton className="h-4 w-8 rounded-md" />
+                  </div>
+                  <Skeleton className="h-4 w-3/4 rounded-md" />
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <Skeleton className="w-4 h-4 rounded-full" />
+                      <Skeleton className="h-3 w-16 rounded-md" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-3 w-10 rounded-md" />
+                      <Skeleton className="h-3 w-8 rounded-md" />
+                      <Skeleton className="h-6 w-14 rounded-lg" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
         {/* Empty State */}
         {!loading && models.length === 0 && (
-          <div className="bg-[#111113] border border-zinc-800 rounded-2xl p-12 text-center space-y-3 max-w-md mx-auto my-8">
-            <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto text-zinc-400">
+          <div className="bg-card border border-border rounded-2xl p-12 text-center space-y-3 max-w-md mx-auto my-8">
+            <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto text-muted-foreground">
               <Box className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-zinc-200 text-sm">No 3D Models Found</h3>
-            <p className="text-xs text-zinc-400">
+            <h3 className="font-bold text-foreground text-sm">No 3D Models Found</h3>
+            <p className="text-xs text-muted-foreground">
               Try adjusting your search terms or clearing your category and technical filters.
             </p>
-            <button
+            <Button
               onClick={handleResetFilters}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-500 transition-colors"
+              variant="default"
+              className="rounded-xl text-xs font-semibold"
             >
               Reset Filters
-            </button>
+            </Button>
           </div>
         )}
 
@@ -298,10 +397,7 @@ export default function App() {
                 ))}
               </div>
             ) : (
-              <ModelTableView
-                models={models}
-                onSelectModel={(m) => setSelectedModel(m)}
-              />
+              <ModelTableView models={models} onSelectModel={(m) => setSelectedModel(m)} />
             )}
 
             {/* Pagination Controls */}
@@ -317,13 +413,16 @@ export default function App() {
             />
           </>
         )}
-
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-800/80 bg-[#0A0A0B] py-5 px-4 lg:px-8 text-xs text-zinc-500 text-center space-y-1 font-mono">
-        <p>Built for 3D Artists • Powered by Sketchfab Data API & HTTP Range GLTF Manifest Parser</p>
-        <p className="text-[11px] text-zinc-600">All 3D models belong to their respective creators on Sketchfab.com</p>
+      <footer className="border-t border-border bg-card py-5 px-4 lg:px-8 text-xs text-muted-foreground text-center space-y-1 font-mono">
+        <p>
+          Built for 3D Artists. Powered by Sketchfab Data API &amp; HTTP Range GLTF Manifest Parser
+        </p>
+        <p className="text-[11px] text-muted-foreground/80">
+          All 3D models belong to their respective creators on Sketchfab.com
+        </p>
       </footer>
 
       {/* Modals */}
@@ -340,7 +439,6 @@ export default function App() {
         token={token}
         onSaveToken={handleSaveToken}
       />
-
     </div>
   );
 }

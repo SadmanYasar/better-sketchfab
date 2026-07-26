@@ -1,6 +1,8 @@
-import React from 'react';
-import { Heart, Eye, Download, Layers, Box, Sparkles, ChevronRight, Check } from 'lucide-react';
-import { SketchfabModel } from '../types';
+import { ChevronRight, Download, Eye, Heart, Sparkles, Triangle } from 'lucide-react';
+import type React from 'react';
+import { Badge } from '#/components/ui/badge';
+import { Button } from '#/components/ui/button';
+import type { SketchfabModel } from '../types';
 
 interface ModelCardProps {
   model: SketchfabModel;
@@ -8,7 +10,6 @@ interface ModelCardProps {
 }
 
 export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) => {
-  // Extract highest resolution thumbnail (sort by width descending)
   const getHighestResThumbnail = () => {
     const images = model.thumbnails?.images;
     if (!images || images.length === 0) {
@@ -20,130 +21,157 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
 
   const thumbnail = getHighestResThumbnail();
 
-  const formattedFaces = model.faceCount >= 1000 
-    ? `${(model.faceCount / 1000).toFixed(1)}k` 
-    : model.faceCount.toString();
+  const formattedFaces =
+    model.faceCount >= 1000
+      ? `${(model.faceCount / 1000).toFixed(1)}k`
+      : model.faceCount.toString();
 
-  const formattedVertices = model.vertexCount >= 1000 
-    ? `${(model.vertexCount / 1000).toFixed(1)}k` 
-    : model.vertexCount.toString();
+  const formattedVertices =
+    model.vertexCount >= 1000
+      ? `${(model.vertexCount / 1000).toFixed(1)}k`
+      : model.vertexCount.toString();
 
   const isLowPoly = model.faceCount < 20000;
 
   return (
     <div
       onClick={() => onSelectModel(model)}
-      className="group bg-[#111113] border border-zinc-800/90 hover:border-indigo-500/50 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 cursor-pointer flex flex-col justify-between"
+      className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 bg-muted"
     >
-      {/* Thumbnail Header */}
-      <div className="relative aspect-video bg-[#0A0A0B] overflow-hidden">
-        <img
-          src={thumbnail}
-          alt={model.name}
-          referrerPolicy="no-referrer"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-[#0A0A0B]/20 to-transparent opacity-85 group-hover:opacity-65 transition-opacity" />
+      {/* Full-bleed thumbnail */}
+      <img
+        src={thumbnail}
+        alt={model.name}
+        referrerPolicy="no-referrer"
+        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+        loading="lazy"
+      />
 
-        {/* Top Badges */}
-        <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1.5 z-10">
-          {model.isPbr && (
-            <span className="bg-indigo-950/90 text-indigo-300 border border-indigo-700/60 text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-md">
-              PBR
-            </span>
-          )}
-          {(model.animationCount || 0) > 0 && (
-            <span className="bg-amber-950/90 text-amber-300 border border-amber-700/60 text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-md flex items-center gap-1">
-              <Sparkles className="w-2.5 h-2.5 text-amber-400" />
-              {model.animationCount} Anim
-            </span>
-          )}
-          {isLowPoly && (
-            <span className="bg-emerald-950/90 text-emerald-300 border border-emerald-700/60 text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-md">
-              Low Poly
-            </span>
-          )}
-        </div>
+      {/* Dark gradient overlay — heavier at bottom for text legibility */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10 group-hover:from-black/75 transition-all duration-300" />
 
-        {/* Download Badge */}
-        <div className="absolute top-2.5 right-2.5 z-10">
-          <span className="bg-[#111113]/90 text-zinc-200 border border-zinc-700/80 text-[10px] font-semibold px-2 py-0.5 rounded-md backdrop-blur-md flex items-center gap-1">
-            <Download className="w-2.5 h-2.5 text-indigo-400" />
-            Free 3D
-          </span>
-        </div>
-
-        {/* Geometry Metrics Overlay at Bottom of Thumbnail */}
-        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-xs z-10">
-          <div className="flex items-center gap-2">
-            <span className="bg-[#0A0A0B]/90 border border-zinc-800 text-zinc-200 text-[11px] font-mono font-medium px-2 py-0.5 rounded-md backdrop-blur-md flex items-center gap-1">
-              <span className="text-indigo-400 font-bold">△</span> {formattedFaces}
-            </span>
-            <span className="bg-[#0A0A0B]/90 border border-zinc-800 text-zinc-300 text-[11px] font-mono font-medium px-2 py-0.5 rounded-md backdrop-blur-md flex items-center gap-1">
-              <span className="text-sky-400">•</span> {formattedVertices}
-            </span>
-          </div>
-          {model.materialCount && (
-            <span className="bg-[#0A0A0B]/90 border border-zinc-800 text-zinc-400 text-[10px] font-mono px-2 py-0.5 rounded-md backdrop-blur-md">
-              {model.materialCount} Mat
-            </span>
-          )}
-        </div>
+      {/* ── Top badges ── */}
+      <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1 z-10">
+        {model.isPbr && (
+          <Badge
+            variant="default"
+            className="text-[10px] font-bold px-1.5 py-0 rounded-md backdrop-blur-md"
+          >
+            PBR
+          </Badge>
+        )}
+        {(model.animationCount || 0) > 0 && (
+          <Badge
+            variant="secondary"
+            className="text-[10px] font-bold px-1.5 py-0 rounded-md backdrop-blur-md flex items-center gap-0.5"
+          >
+            <Sparkles className="w-2.5 h-2.5" />
+            <span>{model.animationCount}</span>
+          </Badge>
+        )}
+        {isLowPoly && (
+          <Badge
+            variant="secondary"
+            className="text-[10px] font-bold px-1.5 py-0 rounded-md backdrop-blur-md"
+          >
+            Low Poly
+          </Badge>
+        )}
       </div>
 
-      {/* Model Info Section */}
-      <div className="p-4 flex-1 flex flex-col justify-between gap-3">
-        <div>
-          <h3 className="font-semibold text-zinc-100 text-sm line-clamp-1 group-hover:text-indigo-400 transition-colors">
-            {model.name}
-          </h3>
-          
+      {/* Free Download badge — top right */}
+      <div className="absolute top-2.5 right-2.5 z-10">
+        <Badge
+          variant="outline"
+          className="bg-black/50 text-white border-white/20 text-[10px] font-semibold px-1.5 py-0 rounded-md backdrop-blur-md flex items-center gap-1"
+        >
+          <Download className="w-2.5 h-2.5 text-primary" />
+          <span>Free</span>
+        </Badge>
+      </div>
+
+      {/* ── Bottom info panel ── */}
+      <div className="absolute bottom-0 left-0 right-0 p-3 z-10 space-y-2">
+        {/* Geometry stats row */}
+        <div className="flex items-center gap-1.5">
+          <Badge
+            variant="outline"
+            className="bg-black/60 border-white/15 text-white text-[10px] font-mono font-medium px-1.5 py-0 rounded-md backdrop-blur-md flex items-center gap-1"
+          >
+            <Triangle className="w-2.5 h-2.5 text-primary fill-primary" />
+            <span>{formattedFaces}</span>
+          </Badge>
+          <Badge
+            variant="outline"
+            className="bg-black/60 border-white/15 text-white text-[10px] font-mono font-medium px-1.5 py-0 rounded-md backdrop-blur-md flex items-center gap-1"
+          >
+            <span className="w-1 h-1 rounded-full bg-white/50 shrink-0" />
+            <span>{formattedVertices}</span>
+          </Badge>
+          {model.materialCount && (
+            <Badge
+              variant="outline"
+              className="bg-black/60 border-white/15 text-white/80 text-[10px] font-mono px-1.5 py-0 rounded-md backdrop-blur-md"
+            >
+              {model.materialCount}m
+            </Badge>
+          )}
+        </div>
+
+        {/* Model name */}
+        <h3 className="font-semibold text-white text-sm leading-tight line-clamp-1 group-hover:text-primary transition-colors drop-shadow-sm">
+          {model.name}
+        </h3>
+
+        {/* Author + stats + inspect button row */}
+        <div className="flex items-center justify-between gap-2">
           {/* Author */}
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-1.5 min-w-0">
             {model.user?.avatar?.images?.[0]?.url ? (
               <img
                 src={model.user.avatar.images[0].url}
                 alt={model.user.username}
                 referrerPolicy="no-referrer"
-                className="w-5 h-5 rounded-full object-cover border border-zinc-700"
+                className="w-4 h-4 rounded-full object-cover border border-white/20 shrink-0"
               />
             ) : (
-              <div className="w-5 h-5 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] text-zinc-300 font-bold">
+              <div className="w-4 h-4 rounded-full bg-white/20 border border-white/20 flex items-center justify-center text-[9px] text-white font-bold shrink-0">
                 {model.user?.username?.charAt(0)?.toUpperCase() || 'A'}
               </div>
             )}
-            <span className="text-xs text-zinc-400 line-clamp-1 hover:text-zinc-200">
-              {model.user?.displayName || model.user?.username || 'Sketchfab Creator'}
-            </span>
-          </div>
-        </div>
-
-        {/* Footer Metrics & Inspect Button */}
-        <div className="pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400">
-          <div className="flex items-center gap-3 font-mono text-[11px]">
-            <span className="flex items-center gap-1 hover:text-zinc-200">
-              <Eye className="w-3.5 h-3.5 text-zinc-500" />
-              {model.viewCount >= 1000 ? `${(model.viewCount / 1000).toFixed(1)}k` : model.viewCount}
-            </span>
-            <span className="flex items-center gap-1 hover:text-zinc-200">
-              <Heart className="w-3.5 h-3.5 text-rose-500/80" />
-              {model.likeCount >= 1000 ? `${(model.likeCount / 1000).toFixed(1)}k` : model.likeCount}
+            <span className="text-[11px] text-white/70 line-clamp-1 truncate">
+              {model.user?.displayName || model.user?.username || 'Creator'}
             </span>
           </div>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectModel(model);
-            }}
-            className="flex items-center gap-1 text-xs font-semibold text-indigo-400 group-hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 rounded-lg border border-indigo-500/20 transition-all"
-          >
-            <span>Inspect</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          {/* View / Like + Inspect */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="flex items-center gap-0.5 text-[10px] text-white/60 font-mono">
+              <Eye className="w-3 h-3" />
+              {model.viewCount >= 1000
+                ? `${(model.viewCount / 1000).toFixed(1)}k`
+                : model.viewCount}
+            </span>
+            <span className="flex items-center gap-0.5 text-[10px] text-white/60 font-mono">
+              <Heart className="w-3 h-3 text-red-400" />
+              {model.likeCount >= 1000
+                ? `${(model.likeCount / 1000).toFixed(1)}k`
+                : model.likeCount}
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectModel(model);
+              }}
+              className="h-6 text-[10px] font-semibold px-2 rounded-lg gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-sm"
+            >
+              <span>Inspect</span>
+              <ChevronRight className="w-3 h-3" />
+            </Button>
+          </div>
         </div>
-
       </div>
     </div>
   );

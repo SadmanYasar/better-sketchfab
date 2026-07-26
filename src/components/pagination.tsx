@@ -1,5 +1,7 @@
-import React from 'react';
 import { ChevronLeft, ChevronRight, Hash } from 'lucide-react';
+import type React from 'react';
+import { Badge } from '#/components/ui/badge';
+import { Button } from '#/components/ui/button';
 
 interface PaginationProps {
   currentPage: number;
@@ -26,40 +28,47 @@ export const Pagination: React.FC<PaginationProps> = ({
   const endItem = (currentPage - 1) * pageSize + currentCount;
 
   return (
-    <div className="bg-[#111113] border border-zinc-800/80 rounded-2xl p-4 sm:p-4.5 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 shadow-xl">
+    <div className="bg-card border border-border rounded-2xl p-4 sm:p-4.5 flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 shadow-xl">
       {/* Item Range Info */}
-      <div className="flex items-center gap-2 text-xs text-zinc-400 font-mono">
-        <Hash className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+      <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
+        <Hash className="w-3.5 h-3.5 text-primary shrink-0" />
         <span>
-          Showing models <strong className="text-zinc-200 font-bold">{startItem}</strong> -{' '}
-          <strong className="text-zinc-200 font-bold">{endItem}</strong> on{' '}
-          <strong className="text-indigo-300 font-bold">Page {currentPage}</strong>
+          Showing models <strong className="text-foreground font-bold">{startItem}</strong> -{' '}
+          <strong className="text-foreground font-bold">{endItem}</strong> on{' '}
+          <strong className="text-primary font-bold">Page {currentPage}</strong>
         </span>
       </div>
 
       {/* Page Controls */}
       <div className="flex items-center gap-2">
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={onPrevPage}
           disabled={!hasPrevPage || loading}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 hover:border-zinc-700 disabled:opacity-40 disabled:hover:bg-zinc-900 disabled:hover:text-zinc-300 disabled:hover:border-zinc-800 disabled:cursor-not-allowed transition-all cursor-pointer"
+          className="h-8 px-3.5 text-xs font-medium gap-1.5 rounded-xl"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>Previous</span>
-        </button>
+        </Button>
 
-        <div className="px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs font-bold font-mono text-indigo-300">
+        <Badge
+          variant="outline"
+          className="h-8 px-3 rounded-xl bg-primary/10 border-primary/30 text-xs font-bold font-mono text-primary"
+        >
           Page {currentPage}
-        </div>
+        </Badge>
 
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={onNextPage}
           disabled={!hasNextPage || loading}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800 hover:border-zinc-700 disabled:opacity-40 disabled:hover:bg-zinc-900 disabled:hover:text-zinc-300 disabled:hover:border-zinc-800 disabled:cursor-not-allowed transition-all cursor-pointer"
+          className="h-8 px-3.5 text-xs font-medium gap-1.5 rounded-xl"
         >
           <span>Next</span>
           <ChevronRight className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );
