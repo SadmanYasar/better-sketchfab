@@ -22,7 +22,6 @@ export const Route = createFileRoute('/')({
     if (search.date) result.date = search.date;
     if (search.type) result.type = search.type;
     if (search.view && search.view !== 'grid') result.view = search.view;
-    if (search.page && Number(search.page) > 1) result.page = Number(search.page);
     return result as unknown as HomeSearch;
   },
   component: App,

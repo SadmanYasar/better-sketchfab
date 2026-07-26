@@ -1,7 +1,7 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Box, Sparkles, X } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '#/components/ui/button';
 import { Skeleton } from '#/components/ui/skeleton';
 import { FilterBar } from './components/filter-bar';
@@ -17,8 +17,8 @@ import { fromHomeSearch, normalizeSearch, toHomeSearch } from './types';
 
 const PAGE_SIZE = 24;
 
-const extractCursorToken = (cursorVal: string | null | undefined): string | null => {
-  if (!cursorVal) return null;
+const extractCursorToken = (cursorVal: string | null | undefined): string | undefined => {
+  if (!cursorVal) return undefined;
   if (cursorVal.includes('cursor=')) {
     try {
       const match = cursorVal.match(/cursor=([^&]+)/);
@@ -63,10 +63,7 @@ export default function App() {
 
   const [selectedModel, setSelectedModel] = useState<SketchfabModel | null>(null);
 
-  const cursorsRef = useRef<Record<number, string | null>>({ 1: null });
-
   const filters = useMemo(() => fromHomeSearch(search), [search]);
-  const currentPage = search.page;
 
   const apiParams = useMemo(() => {
     const p: Record<string, string> = {
@@ -90,46 +87,38 @@ export default function App() {
     return p;
   }, [filters]);
 
-  const currentCursor = cursorsRef.current[currentPage] || '';
+  const { data, isLoading, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage } =
+    useInfiniteQuery({
+      queryKey: [
+        'search',
+        filters.query,
+        filters.category,
+        filters.sortBy,
+        filters.downloadableOnly,
+        filters.staffpickedOnly,
+        filters.pbrOnly,
+        filters.animatedOnly,
+        filters.riggedOnly,
+        filters.soundOnly,
+        filters.unsafeSearch,
+        filters.license,
+        filters.minFaces,
+        filters.maxFaces,
+        filters.date,
+        filters.modelType,
+      ],
+      queryFn: async ({ pageParam }) => {
+        const params = pageParam ? { ...apiParams, cursor: pageParam } : apiParams;
+        return searchSketchfabModels({ data: params });
+      },
+      initialPageParam: '',
+      getNextPageParam: (lastPage) => extractCursorToken(lastPage.cursors?.next),
+      staleTime: 30000,
+    });
 
-  const { data, isLoading } = useQuery({
-    queryKey: [
-      'search',
-      filters.query,
-      filters.category,
-      filters.sortBy,
-      filters.downloadableOnly,
-      filters.staffpickedOnly,
-      filters.pbrOnly,
-      filters.animatedOnly,
-      filters.riggedOnly,
-      filters.soundOnly,
-      filters.unsafeSearch,
-      filters.license,
-      filters.minFaces,
-      filters.maxFaces,
-      filters.date,
-      filters.modelType,
-      currentPage,
-    ],
-    queryFn: async () => {
-      const result = await searchSketchfabModels({
-        data: { ...apiParams, cursor: currentCursor },
-      });
-
-      const extractedNext = extractCursorToken(result.cursors?.next);
-      if (extractedNext) {
-        cursorsRef.current[currentPage + 1] = extractedNext;
-      }
-
-      return result;
-    },
-    placeholderData: keepPreviousData,
-    staleTime: 30000,
-  });
-
-  const models = data?.results || [];
-  const hasNextPage = Boolean(data?.cursors?.next) || models.length >= PAGE_SIZE;
+  const models = data?.pages.flatMap((p) => p.results || []) || [];
+  const totalLoaded = models.length;
+  const isInitialLoading = isLoading;
 
   const handleSaveToken = (newToken: string) => {
     setToken(newToken);
@@ -141,18 +130,15 @@ export default function App() {
   };
 
   const handleFilterChange = (updates: Partial<HomeSearch>) => {
-    cursorsRef.current = { 1: null };
     navigate({
       search: (prev) => ({
         ...prev,
         ...updates,
-        page: 1,
       }),
     });
   };
 
   const handleResetFilters = () => {
-    cursorsRef.current = { 1: null };
     navigate({
       search: (prev) => ({
         ...prev,
@@ -168,28 +154,9 @@ export default function App() {
         license: '',
         minFaces: undefined as unknown as undefined,
         maxFaces: undefined as unknown as undefined,
-        page: 1,
         ...(search.view !== 'grid' ? { view: search.view } : {}),
       }),
     });
-  };
-
-  const handleNextPage = () => {
-    if (hasNextPage) {
-      navigate({
-        search: (prev) => ({ ...prev, page: prev.page + 1 }),
-      });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      navigate({
-        search: (prev) => ({ ...prev, page: prev.page - 1 }),
-      });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
   };
 
   const handleFilterChangePartial = (updates: Partial<HomeSearch>) => {
@@ -285,7 +252,7 @@ export default function App() {
           </div>
         )}
 
-        {isLoading && (
+        {isInitialLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, idx) => (
               <div
@@ -324,7 +291,7 @@ export default function App() {
           </div>
         )}
 
-        {!isLoading && models.length === 0 && (
+        {!isInitialLoading && models.length === 0 && (
           <div className="bg-card border border-border rounded-2xl p-12 text-center space-y-3 max-w-md mx-auto my-8">
             <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto text-muted-foreground">
               <Box className="w-6 h-6" />
@@ -343,7 +310,7 @@ export default function App() {
           </div>
         )}
 
-        {!isLoading && models.length > 0 && (
+        {models.length > 0 && (
           <>
             {filters.viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -360,14 +327,11 @@ export default function App() {
             )}
 
             <Pagination
-              currentPage={currentPage}
-              pageSize={PAGE_SIZE}
-              currentCount={models.length}
-              hasNextPage={hasNextPage}
-              hasPrevPage={currentPage > 1}
-              onNextPage={handleNextPage}
-              onPrevPage={handlePrevPage}
-              loading={isLoading}
+              totalCount={totalLoaded}
+              hasNextPage={!!hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              fetchNextPage={() => fetchNextPage()}
+              onReset={() => {}}
             />
           </>
         )}

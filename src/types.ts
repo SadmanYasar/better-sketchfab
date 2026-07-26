@@ -121,7 +121,6 @@ export interface HomeSearch {
   date: string;
   type: string;
   view: 'grid' | 'table';
-  page: number;
 }
 
 export function normalizeSearch(s: Record<string, unknown>): HomeSearch {
@@ -142,7 +141,6 @@ export function normalizeSearch(s: Record<string, unknown>): HomeSearch {
     date: (s.date as string) || '',
     type: (s.type as string) || '',
     view: (s.view as 'grid' | 'table') || 'grid',
-    page: Number(s.page) || 1,
   };
 }
 
