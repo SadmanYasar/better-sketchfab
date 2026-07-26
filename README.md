@@ -1,5 +1,9 @@
 # Better Sketchfab 🎨📦
 
+<p align="center">
+  <img src="public/preview.png" alt="Better Sketchfab Preview" width="100%" />
+</p>
+
 **Better Sketchfab** is an enhanced technical geometry & shading inspector web application for downloadable Sketchfab 3D models. Built with **TanStack Start** (React 19 + TanStack Router SSR) targeting **Cloudflare Workers / Pages**.
 
 ## Key Features
