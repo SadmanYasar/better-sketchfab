@@ -1,5 +1,7 @@
-import { Box, RefreshCw, Sparkles, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Box, Sparkles, X } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
 import { Button } from '#/components/ui/button';
 import { Skeleton } from '#/components/ui/skeleton';
 import { FilterBar } from './components/filter-bar';
@@ -9,8 +11,9 @@ import { ModelTableView } from './components/model-table-view';
 import { Navbar } from './components/navbar';
 import { Pagination } from './components/pagination';
 import { TokenModal } from './components/token-modal';
-import { FEATURED_MODELS } from './data/mockModels';
-import type { SearchFilterState, SketchfabModel } from './types';
+import { searchSketchfabModels } from './lib/sketchfabServerFns';
+import type { HomeSearch, SketchfabModel } from './types';
+import { fromHomeSearch, normalizeSearch, toHomeSearch } from './types';
 
 const PAGE_SIZE = 24;
 
@@ -28,31 +31,27 @@ const extractCursorToken = (cursorVal: string | null | undefined): string | null
 };
 
 export default function App() {
+  const search = normalizeSearch(useSearch({ from: '/', structuralSharing: false }));
+  const navigate = useNavigate({ from: '/' });
+
   const [token, setToken] = useState<string>(() => {
-    return localStorage.getItem('sketchfab_token') || '';
+    if (typeof window === 'undefined') return '';
+    try {
+      return localStorage.getItem('sketchfab_token') || '';
+    } catch {
+      return '';
+    }
   });
 
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
 
-  const [filters, setFilters] = useState<SearchFilterState>({
-    query: '',
-    category: '',
-    sortBy: 'relevance',
-    downloadableOnly: true,
-    staffpickedOnly: false,
-    pbrOnly: false,
-    animatedOnly: false,
-    riggedOnly: false,
-    soundOnly: false,
-    unsafeSearch: false,
-    license: '',
-    maxFaces: undefined,
-    minFaces: undefined,
-    viewMode: 'grid',
-  });
-
   const [bannerDismissed, setBannerDismissed] = useState<boolean>(() => {
-    return localStorage.getItem('sketchfab_banner_dismissed') === 'true';
+    if (typeof window === 'undefined') return false;
+    try {
+      return localStorage.getItem('sketchfab_banner_dismissed') === 'true';
+    } catch {
+      return false;
+    }
   });
 
   const handleDismissBanner = () => {
@@ -61,14 +60,76 @@ export default function App() {
       localStorage.setItem('sketchfab_banner_dismissed', 'true');
     } catch (_e) {}
   };
-  const [loading, setLoading] = useState(false);
-  const [models, setModels] = useState<SketchfabModel[]>([]);
+
   const [selectedModel, setSelectedModel] = useState<SketchfabModel | null>(null);
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState<number>(1);
   const cursorsRef = useRef<Record<number, string | null>>({ 1: null });
-  const [hasNextPage, setHasNextPage] = useState<boolean>(false);
+
+  const filters = useMemo(() => fromHomeSearch(search), [search]);
+  const currentPage = search.page;
+
+  const apiParams = useMemo(() => {
+    const p: Record<string, string> = {
+      count: String(PAGE_SIZE),
+      sort_by: filters.sortBy,
+    };
+    if (filters.query) p.q = filters.query;
+    if (filters.category) p.categories = filters.category;
+    if (filters.pbrOnly) p.pbr_type = 'true';
+    if (filters.animatedOnly) p.animated = 'true';
+    if (filters.riggedOnly) p.rigged = 'true';
+    if (filters.staffpickedOnly) p.staffpicked = 'true';
+    if (filters.soundOnly) p.sound = 'true';
+    if (filters.license) p.licenses = filters.license;
+    if (filters.maxFaces !== undefined) p.max_face_count = String(filters.maxFaces);
+    if (filters.minFaces !== undefined) p.min_face_count = String(filters.minFaces);
+    if (filters.unsafeSearch) p.unsafe_search = 'true';
+    if (filters.date) p.date = filters.date;
+    if (filters.modelType) p.is_ai = filters.modelType === 'ai' ? 'true' : 'false';
+    p.downloadable = filters.downloadableOnly ? 'true' : 'true';
+    return p;
+  }, [filters]);
+
+  const currentCursor = cursorsRef.current[currentPage] || '';
+
+  const { data, isLoading } = useQuery({
+    queryKey: [
+      'search',
+      filters.query,
+      filters.category,
+      filters.sortBy,
+      filters.downloadableOnly,
+      filters.staffpickedOnly,
+      filters.pbrOnly,
+      filters.animatedOnly,
+      filters.riggedOnly,
+      filters.soundOnly,
+      filters.unsafeSearch,
+      filters.license,
+      filters.minFaces,
+      filters.maxFaces,
+      filters.date,
+      filters.modelType,
+      currentPage,
+    ],
+    queryFn: async () => {
+      const result = await searchSketchfabModels({
+        data: { ...apiParams, cursor: currentCursor },
+      });
+
+      const extractedNext = extractCursorToken(result.cursors?.next);
+      if (extractedNext) {
+        cursorsRef.current[currentPage + 1] = extractedNext;
+      }
+
+      return result;
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 30000,
+  });
+
+  const models = data?.results || [];
+  const hasNextPage = Boolean(data?.cursors?.next) || models.length >= PAGE_SIZE;
 
   const handleSaveToken = (newToken: string) => {
     setToken(newToken);
@@ -79,182 +140,85 @@ export default function App() {
     }
   };
 
-  const handleFilterChange = (updates: Partial<SearchFilterState>) => {
+  const handleFilterChange = (updates: Partial<HomeSearch>) => {
     cursorsRef.current = { 1: null };
-    setCurrentPage(1);
-    setFilters((prev) => ({ ...prev, ...updates }));
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        ...updates,
+        page: 1,
+      }),
+    });
   };
 
   const handleResetFilters = () => {
     cursorsRef.current = { 1: null };
-    setCurrentPage(1);
-    setFilters({
-      query: '',
-      category: '',
-      sortBy: 'relevance',
-      downloadableOnly: true,
-      staffpickedOnly: false,
-      pbrOnly: false,
-      animatedOnly: false,
-      riggedOnly: false,
-      soundOnly: false,
-      unsafeSearch: false,
-      license: '',
-      maxFaces: undefined,
-      minFaces: undefined,
-      viewMode: filters.viewMode,
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        q: '',
+        category: '',
+        sort: 'relevance',
+        staffpicked: false,
+        pbr: false,
+        animated: false,
+        rigged: false,
+        sound: false,
+        nsfw: false,
+        license: '',
+        minFaces: undefined as unknown as undefined,
+        maxFaces: undefined as unknown as undefined,
+        page: 1,
+        ...(search.view !== 'grid' ? { view: search.view } : {}),
+      }),
     });
   };
 
   const handleNextPage = () => {
     if (hasNextPage) {
-      setCurrentPage((prev) => prev + 1);
+      navigate({
+        search: (prev) => ({ ...prev, page: prev.page + 1 }),
+      });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
+      navigate({
+        search: (prev) => ({ ...prev, page: prev.page - 1 }),
+      });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  // Fetch models from API proxy
-  const fetchModels = useCallback(async () => {
-    setLoading(true);
-    try {
-      const activeCursor = cursorsRef.current[currentPage] || null;
-      const params = new URLSearchParams({
-        count: String(PAGE_SIZE),
-        sort_by: filters.sortBy,
-      });
-
-      if (filters.query) params.append('q', filters.query);
-      if (filters.category) params.append('categories', filters.category);
-      if (filters.pbrOnly) params.append('pbr_type', 'pbr');
-      if (filters.animatedOnly) params.append('animated', 'true');
-      if (filters.riggedOnly) params.append('rigged', 'true');
-      if (filters.downloadableOnly) {
-        params.append('downloadable', 'true');
-      } else {
-        params.append('downloadable', '');
-      }
-      if (filters.staffpickedOnly) params.append('staffpicked', 'true');
-      if (filters.soundOnly) params.append('sound', 'true');
-      if (filters.license) params.append('licenses', filters.license);
-      if (filters.maxFaces !== undefined) params.append('max_face_count', String(filters.maxFaces));
-      if (filters.minFaces !== undefined) params.append('min_face_count', String(filters.minFaces));
-      if (activeCursor) params.append('cursor', activeCursor);
-      if (filters.unsafeSearch) params.append('unsafe_search', 'true');
-
-      const res = await fetch(`/api/sketchfab/search?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        let items: SketchfabModel[] = data.results || [];
-
-        // Apply client-side face count filtering if set
-        if (filters.minFaces !== undefined) {
-          items = items.filter((m) => m.faceCount >= (filters.minFaces || 0));
-        }
-        if (filters.maxFaces !== undefined) {
-          items = items.filter((m) => m.faceCount <= (filters.maxFaces || 500000));
-        }
-
-        // Apply client-side sorting for exact consistency (especially for polycount sorting)
-        if (filters.sortBy === '-faceCount') {
-          items.sort((a, b) => b.faceCount - a.faceCount);
-        } else if (filters.sortBy === 'faceCount') {
-          items.sort((a, b) => a.faceCount - b.faceCount);
-        } else if (filters.sortBy === '-likeCount') {
-          items.sort((a, b) => b.likeCount - a.likeCount);
-        } else if (filters.sortBy === '-viewCount') {
-          items.sort((a, b) => b.viewCount - a.viewCount);
-        } else if (filters.sortBy === '-publishedAt') {
-          items.sort(
-            (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-          );
-        }
-
-        setModels(items);
-
-        const extractedNext = extractCursorToken(data.cursors?.next);
-        if (extractedNext) {
-          cursorsRef.current[currentPage + 1] = extractedNext;
-          setHasNextPage(true);
-        } else {
-          setHasNextPage(items.length >= PAGE_SIZE);
-        }
-      } else {
-        // Fallback filtering on featured repository
-        let items = [...FEATURED_MODELS];
-        if (filters.query) {
-          const q = filters.query.toLowerCase();
-          items = items.filter(
-            (m) => m.name.toLowerCase().includes(q) || m.description.toLowerCase().includes(q),
-          );
-        }
-        if (filters.category) {
-          items = items.filter((m) => m.categories.some((c) => c.slug === filters.category));
-        }
-        if (filters.pbrOnly) items = items.filter((m) => m.isPbr);
-        if (filters.animatedOnly) items = items.filter((m) => (m.animationCount || 0) > 0);
-        if (filters.maxFaces) items = items.filter((m) => m.faceCount <= filters.maxFaces!);
-
-        if (filters.sortBy === '-faceCount') {
-          items.sort((a, b) => b.faceCount - a.faceCount);
-        } else if (filters.sortBy === 'faceCount') {
-          items.sort((a, b) => a.faceCount - b.faceCount);
-        } else if (filters.sortBy === '-likeCount') {
-          items.sort((a, b) => b.likeCount - a.likeCount);
-        } else if (filters.sortBy === '-viewCount') {
-          items.sort((a, b) => b.viewCount - a.viewCount);
-        } else if (filters.sortBy === '-publishedAt') {
-          items.sort(
-            (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-          );
-        }
-
-        const startIndex = (currentPage - 1) * PAGE_SIZE;
-        const pageItems = items.slice(startIndex, startIndex + PAGE_SIZE);
-        setModels(pageItems);
-        setHasNextPage(startIndex + PAGE_SIZE < items.length);
-      }
-    } catch (err) {
-      console.error('Failed to fetch models:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters, currentPage]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchModels();
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [fetchModels]);
+  const handleFilterChangePartial = (updates: Partial<HomeSearch>) => {
+    handleFilterChange(updates);
+  };
+  const handleResetFiltersPartial = () => {
+    handleResetFilters();
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary selection:text-primary-foreground">
-      {/* Top Header */}
       <Navbar
         filters={filters}
-        onFilterChange={handleFilterChange}
+        onFilterChange={(u: any) =>
+          handleFilterChangePartial(toHomeSearch(u) as Partial<HomeSearch>)
+        }
         onOpenTokenModal={() => setIsTokenModalOpen(true)}
         hasToken={Boolean(token)}
       />
 
-      {/* Filter and Technical Controls Bar */}
       <FilterBar
         filters={filters}
-        onFilterChange={handleFilterChange}
-        onResetFilters={handleResetFilters}
+        onFilterChange={(u: any) =>
+          handleFilterChangePartial(toHomeSearch(u) as Partial<HomeSearch>)
+        }
+        onResetFilters={handleResetFiltersPartial}
       />
 
-      {/* Main Body Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-5 space-y-5">
-        {/* Banner callout for 3D Artists */}
         {!bannerDismissed ? (
           <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl relative group">
             <div className="space-y-1 pr-6 sm:pr-0">
@@ -270,7 +234,6 @@ export default function App() {
                 GLTF archive manifest extraction.
               </p>
             </div>
-
             <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
               <Button
                 onClick={() => setIsTokenModalOpen(true)}
@@ -280,7 +243,6 @@ export default function App() {
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
                 <span>{token ? 'Configure Token' : 'Unlock S3 Manifest Inspector'}</span>
               </Button>
-
               <Button
                 variant="ghost"
                 size="sm"
@@ -323,8 +285,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Skeleton Card Loaders */}
-        {loading && (
+        {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, idx) => (
               <div
@@ -363,8 +324,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Empty State */}
-        {!loading && models.length === 0 && (
+        {!isLoading && models.length === 0 && (
           <div className="bg-card border border-border rounded-2xl p-12 text-center space-y-3 max-w-md mx-auto my-8">
             <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mx-auto text-muted-foreground">
               <Box className="w-6 h-6" />
@@ -374,7 +334,7 @@ export default function App() {
               Try adjusting your search terms or clearing your category and technical filters.
             </p>
             <Button
-              onClick={handleResetFilters}
+              onClick={handleResetFiltersPartial}
               variant="default"
               className="rounded-xl text-xs font-semibold"
             >
@@ -383,12 +343,11 @@ export default function App() {
           </div>
         )}
 
-        {/* Content Views */}
-        {!loading && models.length > 0 && (
+        {!isLoading && models.length > 0 && (
           <>
             {filters.viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {models.map((model) => (
+                {models.map((model: SketchfabModel) => (
                   <ModelCard
                     key={model.uid}
                     model={model}
@@ -400,7 +359,6 @@ export default function App() {
               <ModelTableView models={models} onSelectModel={(m) => setSelectedModel(m)} />
             )}
 
-            {/* Pagination Controls */}
             <Pagination
               currentPage={currentPage}
               pageSize={PAGE_SIZE}
@@ -409,13 +367,12 @@ export default function App() {
               hasPrevPage={currentPage > 1}
               onNextPage={handleNextPage}
               onPrevPage={handlePrevPage}
-              loading={loading}
+              loading={isLoading}
             />
           </>
         )}
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-border bg-card py-5 px-4 lg:px-8 text-xs text-muted-foreground text-center space-y-1 font-mono">
         <p>
           Built for 3D Artists. Powered by Sketchfab Data API &amp; HTTP Range GLTF Manifest Parser
@@ -425,7 +382,6 @@ export default function App() {
         </p>
       </footer>
 
-      {/* Modals */}
       <ModelDetailModal
         model={selectedModel}
         onClose={() => setSelectedModel(null)}

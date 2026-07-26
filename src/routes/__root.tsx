@@ -1,8 +1,10 @@
 import { TanStackDevtools } from '@tanstack/react-devtools';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { ThemeProvider } from '#/components/theme-toggle';
 import { TooltipProvider } from '#/components/ui/tooltip';
+import { queryClient } from '#/lib/query-client';
 import appCss from '../index.css?url';
 
 export const Route = createRootRoute({
@@ -40,28 +42,46 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const isSSR = typeof window === 'undefined' || typeof document === 'undefined';
+
+  if (isSSR) {
+    return (
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          <HeadContent />
+        </head>
+        <body className="bg-background text-foreground min-h-screen font-sans antialiased selection:bg-primary selection:text-primary-foreground">
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider defaultTheme="dark" storageKey="theme">
+              <TooltipProvider>{children}</TooltipProvider>
+            </ThemeProvider>
+          </QueryClientProvider>
+          <Scripts />
+        </body>
+      </html>
+    );
+  }
+
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <HeadContent />
-      </head>
-      <body className="bg-background text-foreground min-h-screen font-sans antialiased selection:bg-primary selection:text-primary-foreground">
-        <ThemeProvider defaultTheme="dark" storageKey="theme">
-          <TooltipProvider>{children}</TooltipProvider>
-        </ThemeProvider>
-        <TanStackDevtools
-          config={{
-            position: 'bottom-right',
-          }}
-          plugins={[
-            {
-              name: 'TanStack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-          ]}
-        />
-        <Scripts />
-      </body>
-    </html>
+    <QueryClientProvider client={queryClient}>
+      <HeadContent />
+      <ThemeProvider defaultTheme="dark" storageKey="theme">
+        <TooltipProvider>
+          {children}
+          <Scripts />
+        </TooltipProvider>
+      </ThemeProvider>
+      <TanStackDevtools
+        config={{
+          position: 'bottom-right',
+        }}
+        plugins={[
+          {
+            name: 'TanStack Router',
+            render: <TanStackRouterDevtoolsPanel />,
+          },
+        ]}
+      />
+    </QueryClientProvider>
   );
 }

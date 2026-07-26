@@ -133,7 +133,7 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <DialogTitle className="text-base sm:text-lg font-bold text-white line-clamp-1">
+                <DialogTitle className="text-base sm:text-lg font-bold text-foreground line-clamp-1">
                   {model.name}
                 </DialogTitle>
                 {metadata?.isVerifiedGltf && (
@@ -146,9 +146,9 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
                   </Badge>
                 )}
               </div>
-              <DialogDescription className="text-xs text-zinc-400 font-mono flex items-center gap-2 mt-0.5">
+              <DialogDescription className="text-xs text-muted-foreground font-mono flex items-center gap-2 mt-0.5">
                 <span>UID: {model.uid}</span>
-                <span className="w-1 h-1 rounded-full bg-zinc-500 shrink-0" />
+                <span className="w-1 h-1 rounded-full bg-border shrink-0" />
                 <span>By {model.user?.displayName || model.user?.username}</span>
               </DialogDescription>
             </div>
@@ -363,7 +363,7 @@ export const ModelDetailModal: React.FC<ModelDetailModalProps> = ({
                   <Button
                     onClick={handleDownloadModel}
                     disabled={downloading}
-                    className="w-full h-10 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-600/20 gap-2"
+                    className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs rounded-xl shadow-lg shadow-primary/20 gap-2"
                   >
                     {downloading ? (
                       <RefreshCw className="w-4 h-4 animate-spin text-white" />

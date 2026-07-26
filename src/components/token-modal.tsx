@@ -113,9 +113,14 @@ export const TokenModal: React.FC<TokenModalProps> = ({ isOpen, onClose, token, 
 
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               Find your API key under{' '}
-              <strong className="text-foreground">
+              <a
+                href="https://sketchfab.com/settings/password"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-foreground hover:text-primary underline underline-offset-2 transition-colors"
+              >
                 Sketchfab &gt; Account Settings &gt; Password &amp; API
-              </strong>
+              </a>
               .
             </p>
 

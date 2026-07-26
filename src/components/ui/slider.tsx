@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { cn } from '#/lib/utils';
 
 interface DualRangeSliderProps {
@@ -8,6 +8,7 @@ interface DualRangeSliderProps {
   step?: number;
   value?: [number, number];
   onValueChange?: (value: [number, number]) => void;
+  onValueCommit?: (value: [number, number]) => void;
   className?: string;
 }
 
@@ -17,13 +18,16 @@ export const Slider: React.FC<DualRangeSliderProps> = ({
   step = 1000,
   value = [1, 500000],
   onValueChange,
+  onValueCommit,
   className,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const activeThumbRef = useRef<'min' | 'max' | null>(null);
+  const [dragValue, setDragValue] = useState<[number, number] | null>(null);
 
-  const minVal = value[0] ?? min;
-  const maxVal = value[1] ?? max;
+  const displayValue = dragValue ?? value;
+  const minVal = displayValue[0] ?? min;
+  const maxVal = displayValue[1] ?? max;
 
   const minPercent = Math.min(100, Math.max(0, ((minVal - min) / (max - min)) * 100));
   const maxPercent = Math.min(100, Math.max(0, ((maxVal - min) / (max - min)) * 100));
@@ -57,10 +61,14 @@ export const Slider: React.FC<DualRangeSliderProps> = ({
 
     if (targetThumb === 'min') {
       const newMin = Math.min(clickValue, maxVal - step);
-      onValueChange?.([newMin, maxVal]);
+      const next: [number, number] = [newMin, maxVal];
+      onValueChange?.(next);
+      setDragValue(next);
     } else {
       const newMax = Math.max(clickValue, minVal + step);
-      onValueChange?.([minVal, newMax]);
+      const next: [number, number] = [minVal, newMax];
+      onValueChange?.(next);
+      setDragValue(next);
     }
   };
 
@@ -73,15 +81,21 @@ export const Slider: React.FC<DualRangeSliderProps> = ({
 
     if (activeThumbRef.current === 'min') {
       const newMin = Math.min(currentValue, maxVal - step);
-      onValueChange?.([newMin, maxVal]);
+      const next: [number, number] = [newMin, maxVal];
+      onValueChange?.(next);
+      setDragValue(next);
     } else if (activeThumbRef.current === 'max') {
       const newMax = Math.max(currentValue, minVal + step);
-      onValueChange?.([minVal, newMax]);
+      const next: [number, number] = [minVal, newMax];
+      onValueChange?.(next);
+      setDragValue(next);
     }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     activeThumbRef.current = null;
+    setDragValue(null);
+    onValueCommit?.([minVal, maxVal]);
     if (containerRef.current?.hasPointerCapture(e.pointerId)) {
       containerRef.current.releasePointerCapture(e.pointerId);
     }

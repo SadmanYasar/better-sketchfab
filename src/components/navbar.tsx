@@ -1,5 +1,6 @@
 import { Box, Key, LayoutGrid, Search, Table } from 'lucide-react';
 import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ThemeToggle } from '#/components/theme-toggle';
 import { Button } from '#/components/ui/button';
 import { Input } from '#/components/ui/input';
@@ -19,6 +20,35 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenTokenModal,
   hasToken,
 }) => {
+  const [localQuery, setLocalQuery] = useState(filters.query);
+  const queryTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const debouncedQueryChange = useCallback(
+    (value: string) => {
+      clearTimeout(queryTimerRef.current);
+      queryTimerRef.current = setTimeout(() => {
+        onFilterChange({ query: value });
+      }, 300);
+    },
+    [onFilterChange],
+  );
+
+  useEffect(() => {
+    return () => clearTimeout(queryTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    setLocalQuery(filters.query);
+  }, [filters.query]);
+
+  const handleQueryChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setLocalQuery(value);
+      debouncedQueryChange(value);
+    },
+    [debouncedQueryChange],
+  );
   return (
     <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border px-4 lg:px-8 py-2.5">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 md:gap-6">
@@ -62,16 +92,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input
             type="text"
-            value={filters.query}
-            onChange={(e) => onFilterChange({ query: e.target.value })}
+            value={localQuery}
+            onChange={handleQueryChange}
             placeholder="Search 3D models (e.g. Mech, Drone, Low Poly)..."
             className="w-full bg-secondary/40 border-border rounded-xl pl-10 pr-14 py-2 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary font-sans"
           />
-          {filters.query && (
+          {localQuery && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onFilterChange({ query: '' })}
+              onClick={() => {
+                setLocalQuery('');
+                clearTimeout(queryTimerRef.current);
+                onFilterChange({ query: '' });
+              }}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 h-7 text-[11px] text-muted-foreground hover:text-foreground px-2"
             >
               Clear

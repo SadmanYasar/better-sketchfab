@@ -1,7 +1,9 @@
 import { ChevronRight, Download, Eye, Heart, Sparkles, Triangle } from 'lucide-react';
 import type React from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Badge } from '#/components/ui/badge';
 import { Button } from '#/components/ui/button';
+import { fetchModelSpritesheet } from '../lib/sketchfabServerFns';
 import type { SketchfabModel } from '../types';
 
 interface ModelCardProps {
@@ -9,17 +11,76 @@ interface ModelCardProps {
   onSelectModel: (model: SketchfabModel) => void;
 }
 
-export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) => {
-  const getHighestResThumbnail = () => {
-    const images = model.thumbnails?.images;
-    if (!images || images.length === 0) {
-      return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
-    }
-    const sorted = [...images].sort((a, b) => (b.width || 0) - (a.width || 0));
-    return sorted[0]?.url || images[0]?.url;
-  };
+function getHighestResThumbnail(model: SketchfabModel): string {
+  const images = model.thumbnails?.images;
+  if (!images || images.length === 0) {
+    return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
+  }
+  const sorted = [...images].sort((a, b) => (b.width || 0) - (a.width || 0));
+  return sorted[0]?.url || images[0]?.url;
+}
 
-  const thumbnail = getHighestResThumbnail();
+const SPRITE_FRAME_COUNT = 15;
+
+interface SpriteInfo {
+  url: string;
+  naturalWidth: number;
+  naturalHeight: number;
+}
+
+export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const spriteCache = useRef<Map<string, SpriteInfo>>(new Map());
+  const spriteRef = useRef<SpriteInfo | null>(null);
+  const [sprite, setSprite] = useState<SpriteInfo | null>(null);
+  const [offsetPx, setOffsetPx] = useState(0);
+
+  const handleMouseEnter = useCallback(() => {
+    const cached = spriteCache.current.get(model.uid);
+    if (cached) {
+      spriteRef.current = cached;
+      setSprite(cached);
+      setOffsetPx(0);
+      return;
+    }
+    fetchModelSpritesheet({ data: { uid: model.uid } }).then((result) => {
+      if (!result.url) return;
+      const preload = new Image();
+      preload.onload = () => {
+        const info: SpriteInfo = {
+          url: result.url,
+          naturalWidth: preload.naturalWidth,
+          naturalHeight: preload.naturalHeight,
+        };
+        spriteCache.current.set(model.uid, info);
+        spriteRef.current = info;
+        setSprite(info);
+        setOffsetPx(0);
+      };
+      preload.src = result.url;
+    });
+  }, [model.uid]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current;
+    const info = spriteRef.current;
+    if (!card || !info) return;
+    const rect = card.getBoundingClientRect();
+    const w = rect.width;
+    const x = (e.clientX - rect.left) / w;
+    const index = Math.min(Math.floor(x * SPRITE_FRAME_COUNT), SPRITE_FRAME_COUNT - 1);
+    const bgW = info.naturalWidth * (w / info.naturalHeight);
+    const shift = (index + 0.5) * (bgW / SPRITE_FRAME_COUNT) - w / 2;
+    setOffsetPx(-shift);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    spriteRef.current = null;
+    setSprite(null);
+    setOffsetPx(0);
+  }, []);
+
+  const thumbnail = getHighestResThumbnail(model);
 
   const formattedFaces =
     model.faceCount >= 1000
@@ -35,17 +96,33 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
 
   return (
     <div
+      ref={cardRef}
       onClick={() => onSelectModel(model)}
+      onMouseEnter={handleMouseEnter}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 bg-muted"
     >
-      {/* Full-bleed thumbnail */}
-      <img
-        src={thumbnail}
-        alt={model.name}
-        referrerPolicy="no-referrer"
-        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-        loading="lazy"
-      />
+      {/* Spritesheet or static thumbnail */}
+      {sprite ? (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${sprite.url})`,
+            backgroundSize: 'auto 100%',
+            backgroundPosition: `${offsetPx}px 0`,
+            backgroundRepeat: 'no-repeat',
+          }}
+        />
+      ) : (
+        <img
+          src={thumbnail}
+          alt={model.name}
+          referrerPolicy="no-referrer"
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      )}
 
       {/* Dark gradient overlay — heavier at bottom for text legibility */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10 group-hover:from-black/75 transition-all duration-300" />

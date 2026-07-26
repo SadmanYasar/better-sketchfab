@@ -143,6 +143,8 @@ export const searchSketchfabModels = createServerFn({ method: 'GET' })
         count = '24',
         cursor = '',
         unsafe_search = '',
+        date = '',
+        is_ai = '',
       } = data || {};
 
       const params = new URLSearchParams({
@@ -164,6 +166,8 @@ export const searchSketchfabModels = createServerFn({ method: 'GET' })
       if (min_face_count) params.append('min_face_count', String(min_face_count));
       if (cursor) params.append('cursor', String(cursor));
       if (unsafe_search === 'true') params.append('unsafe_search', 'true');
+      if (date) params.append('date', String(date));
+      if (is_ai) params.append('is_ai', String(is_ai));
 
       const sketchfabUrl = `https://api.sketchfab.com/v3/search?${params.toString()}`;
 
@@ -470,6 +474,25 @@ export const verifySketchfabToken = createServerFn({ method: 'POST' })
       };
     } catch (err: any) {
       return { valid: false, error: err.message };
+    }
+  });
+
+export const fetchModelSpritesheet = createServerFn({ method: 'GET' })
+  .validator((data: { uid: string }) => data)
+  .handler(async ({ data }) => {
+    const { uid } = data;
+    try {
+      const response = await fetch(`https://sketchfab.com/i/models/${uid}/fallback`, {
+        headers: { 'User-Agent': 'Sketchfab3DArtistInspector/1.0' },
+      });
+      if (!response.ok) return { url: null };
+      const body = await response.json();
+      const images = body?.results?.images;
+      if (!images || !Array.isArray(images) || images.length === 0) return { url: null };
+      const sorted = [...images].sort((a, b) => (b.width || 0) - (a.width || 0));
+      return { url: sorted[0]?.url || null };
+    } catch {
+      return { url: null };
     }
   });
 
