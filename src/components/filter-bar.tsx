@@ -98,7 +98,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     filters.animatedOnly ||
     filters.riggedOnly ||
     filters.soundOnly ||
-    filters.unsafeSearch ||
+    filters.restrictedSearch ||
     filters.license ||
     filters.maxFaces !== undefined ||
     filters.minFaces !== undefined ||
@@ -109,7 +109,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     filters.pbrOnly,
     filters.riggedOnly,
     filters.soundOnly,
-    filters.unsafeSearch,
+    filters.restrictedSearch,
     filters.minFaces !== undefined,
     filters.maxFaces !== undefined,
   ].filter(Boolean).length;
@@ -305,11 +305,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 </Button>
 
                 <Button
-                  variant={filters.unsafeSearch ? 'default' : 'ghost'}
+                  variant={filters.restrictedSearch ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => onFilterChange({ unsafeSearch: !filters.unsafeSearch })}
+                  onClick={() => onFilterChange({ restrictedSearch: !filters.restrictedSearch })}
                   className={`h-8 justify-start text-xs font-medium gap-2 px-2 w-full ${
-                    filters.unsafeSearch
+                    filters.restrictedSearch
                       ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
                       : ''
                   }`}

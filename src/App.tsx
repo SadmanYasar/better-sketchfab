@@ -73,17 +73,17 @@ export default function App() {
     if (filters.query) p.q = filters.query;
     if (filters.category) p.categories = filters.category;
     if (filters.pbrOnly) p.pbr_type = 'pbr';
-    if (filters.animatedOnly) p.animated = 'true';
-    if (filters.riggedOnly) p.rigged = 'true';
-    if (filters.staffpickedOnly) p.staffpicked = 'true';
-    if (filters.soundOnly) p.sound = 'true';
+    if (filters.animatedOnly) p.animated = '1';
+    if (filters.riggedOnly) p.rigged = '1';
+    if (filters.staffpickedOnly) p.staffpicked = '1';
+    if (filters.soundOnly) p.sound = '1';
+    if (filters.restrictedSearch) p.restricted = '1';
     if (filters.license) p.licenses = filters.license;
     if (filters.maxFaces !== undefined) p.max_face_count = String(filters.maxFaces);
     if (filters.minFaces !== undefined) p.min_face_count = String(filters.minFaces);
-    if (filters.unsafeSearch) p.unsafe_search = 'true';
     if (filters.date) p.date = filters.date;
     if (filters.modelType) p.is_ai = filters.modelType === 'ai' ? 'true' : 'false';
-    p.downloadable = filters.downloadableOnly ? 'true' : 'true';
+    p.downloadable = filters.downloadableOnly ? '1' : '1';
     return p;
   }, [filters]);
 
@@ -100,7 +100,7 @@ export default function App() {
         filters.animatedOnly,
         filters.riggedOnly,
         filters.soundOnly,
-        filters.unsafeSearch,
+        filters.restrictedSearch,
         filters.license,
         filters.minFaces,
         filters.maxFaces,
@@ -150,7 +150,7 @@ export default function App() {
         animated: false,
         rigged: false,
         sound: false,
-        nsfw: false,
+        restricted: false,
         license: '',
         minFaces: undefined as unknown as undefined,
         maxFaces: undefined as unknown as undefined,

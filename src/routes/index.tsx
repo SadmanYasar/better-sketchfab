@@ -17,7 +17,7 @@ export const Route = createFileRoute('/')({
     if (search.animated === 'true' || search.animated === true) result.animated = true;
     if (search.rigged === 'true' || search.rigged === true) result.rigged = true;
     if (search.sound === 'true' || search.sound === true) result.sound = true;
-    if (search.nsfw === 'true' || search.nsfw === true) result.nsfw = true;
+    if (search.restricted === 'true' || search.restricted === true) result.restricted = true;
     if (search.license) result.license = search.license;
     if (search.minFaces) result.minFaces = Number(search.minFaces);
     if (search.maxFaces) result.maxFaces = Number(search.maxFaces);
@@ -36,17 +36,17 @@ export const Route = createFileRoute('/')({
     if (filters.query) p.q = filters.query;
     if (filters.category) p.categories = filters.category;
     if (filters.pbrOnly) p.pbr_type = 'pbr';
-    if (filters.animatedOnly) p.animated = 'true';
-    if (filters.riggedOnly) p.rigged = 'true';
-    if (filters.staffpickedOnly) p.staffpicked = 'true';
-    if (filters.soundOnly) p.sound = 'true';
+    if (filters.animatedOnly) p.animated = '1';
+    if (filters.riggedOnly) p.rigged = '1';
+    if (filters.staffpickedOnly) p.staffpicked = '1';
+    if (filters.soundOnly) p.sound = '1';
+    if (filters.restrictedSearch) p.restricted = '1';
     if (filters.license) p.licenses = filters.license;
     if (filters.maxFaces !== undefined) p.max_face_count = String(filters.maxFaces);
     if (filters.minFaces !== undefined) p.min_face_count = String(filters.minFaces);
-    if (filters.unsafeSearch) p.unsafe_search = 'true';
     if (filters.date) p.date = filters.date;
     if (filters.modelType) p.is_ai = filters.modelType === 'ai' ? 'true' : 'false';
-    p.downloadable = filters.downloadableOnly ? 'true' : 'true';
+    p.downloadable = filters.downloadableOnly ? '1' : '1';
 
     return searchSketchfabModels({ data: p });
   },

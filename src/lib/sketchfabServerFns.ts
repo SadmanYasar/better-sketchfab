@@ -142,8 +142,8 @@ export const searchSketchfabModels = createServerFn({ method: 'GET' })
         min_face_count = '',
         count = '24',
         cursor = '',
-        unsafe_search = '',
         date = '',
+        restricted = '',
         is_ai = '',
       } = data || {};
 
@@ -165,8 +165,8 @@ export const searchSketchfabModels = createServerFn({ method: 'GET' })
       if (max_face_count) params.append('max_face_count', String(max_face_count));
       if (min_face_count) params.append('min_face_count', String(min_face_count));
       if (cursor) params.append('cursor', String(cursor));
-      if (unsafe_search === 'true') params.append('unsafe_search', 'true');
       if (date) params.append('date', String(date));
+      if (restricted) params.append('restricted', String(restricted));
       if (is_ai) params.append('is_ai', String(is_ai));
 
       const sketchfabUrl = `https://api.sketchfab.com/v3/search?${params.toString()}`;
