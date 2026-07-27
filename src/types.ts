@@ -95,7 +95,7 @@ export interface SearchFilterState {
   animatedOnly: boolean;
   riggedOnly: boolean;
   soundOnly: boolean;
-  unsafeSearch: boolean;
+  restrictedSearch: boolean;
   license?: string;
   maxFaces?: number;
   minFaces?: number;
@@ -114,7 +114,7 @@ export interface HomeSearch {
   animated: boolean;
   rigged: boolean;
   sound: boolean;
-  nsfw: boolean;
+  restricted: boolean;
   license: string;
   minFaces: number | undefined;
   maxFaces: number | undefined;
@@ -134,7 +134,7 @@ export function normalizeSearch(s: Record<string, unknown>): HomeSearch {
     animated: s.animated === 'true' || s.animated === true,
     rigged: s.rigged === 'true' || s.rigged === true,
     sound: s.sound === 'true' || s.sound === true,
-    nsfw: s.nsfw === 'true' || s.nsfw === true,
+    restricted: s.restricted === 'true' || s.restricted === true,
     license: (s.license as string) || '',
     minFaces: s.minFaces ? Number(s.minFaces) : undefined,
     maxFaces: s.maxFaces ? Number(s.maxFaces) : undefined,
@@ -155,7 +155,7 @@ export function fromHomeSearch(s: HomeSearch): SearchFilterState {
     animatedOnly: s.animated,
     riggedOnly: s.rigged,
     soundOnly: s.sound,
-    unsafeSearch: s.nsfw,
+    restrictedSearch: s.restricted,
     license: s.license || undefined,
     minFaces: s.minFaces,
     maxFaces: s.maxFaces,
@@ -177,7 +177,8 @@ export function toHomeSearch(f: Partial<SearchFilterState>): Partial<HomeSearch>
   if ('animatedOnly' in f && f.animatedOnly !== undefined) h.animated = f.animatedOnly;
   if ('riggedOnly' in f && f.riggedOnly !== undefined) h.rigged = f.riggedOnly;
   if ('soundOnly' in f && f.soundOnly !== undefined) h.sound = f.soundOnly;
-  if ('unsafeSearch' in f && f.unsafeSearch !== undefined) h.nsfw = f.unsafeSearch;
+  if ('restrictedSearch' in f && f.restrictedSearch !== undefined)
+    h.restricted = f.restrictedSearch;
   if ('license' in f) h.license = f.license || '';
   if ('minFaces' in f) h.minFaces = f.minFaces;
   if ('maxFaces' in f) h.maxFaces = f.maxFaces;
