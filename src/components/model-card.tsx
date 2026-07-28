@@ -144,8 +144,11 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
     >
       {/* Loading line */}
       {loading && (
-        <div className="absolute top-0 left-0 right-0 h-0.5 z-20 overflow-hidden">
-          <div className="h-full w-full bg-primary animate-pulse" />
+        <div className="absolute top-0 left-0 right-0 h-0.5 z-20 overflow-hidden bg-muted">
+          <div
+            className="h-full bg-primary"
+            style={{ width: '40%', animation: 'indeterminate-progress 1.4s ease-in-out infinite' }}
+          />
         </div>
       )}
       {/* Spritesheet or static thumbnail */}

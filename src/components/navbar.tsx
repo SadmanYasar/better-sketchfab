@@ -1,4 +1,4 @@
-import { Box, Key, LayoutGrid, Search, Table } from 'lucide-react';
+import { Box, Github, Key, LayoutGrid, Search, Table } from 'lucide-react';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ThemeToggle } from '#/components/theme-toggle';
@@ -138,6 +138,16 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           <ThemeToggle />
+
+          {/* GitHub link */}
+          <a
+            href="https://github.com/SadmanYasar/better-sketchfab"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Github className="w-5 h-5" />
+          </a>
 
           {/* Token Status Modal Launcher */}
           <Tooltip>
