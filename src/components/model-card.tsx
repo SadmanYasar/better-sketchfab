@@ -28,14 +28,25 @@ interface SpriteInfo {
   naturalHeight: number;
 }
 
+function updateSpriteFromClientX(card: HTMLDivElement, info: SpriteInfo, clientX: number) {
+  const rect = card.getBoundingClientRect();
+  const w = rect.width;
+  const x = (clientX - rect.left) / w;
+  const index = Math.min(Math.floor(x * SPRITE_FRAME_COUNT), SPRITE_FRAME_COUNT - 1);
+  const bgW = info.naturalWidth * (w / info.naturalHeight);
+  const shift = (index + 0.5) * (bgW / SPRITE_FRAME_COUNT) - w / 2;
+  return -shift;
+}
+
 export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const spriteCache = useRef<Map<string, SpriteInfo>>(new Map());
   const spriteRef = useRef<SpriteInfo | null>(null);
   const [sprite, setSprite] = useState<SpriteInfo | null>(null);
   const [offsetPx, setOffsetPx] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const handleMouseEnter = useCallback(() => {
+  const loadSprite = useCallback(() => {
     const cached = spriteCache.current.get(model.uid);
     if (cached) {
       spriteRef.current = cached;
@@ -43,8 +54,12 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
       setOffsetPx(0);
       return;
     }
+    setLoading(true);
     fetchModelSpritesheet({ data: { uid: model.uid } }).then((result) => {
-      if (!result.url) return;
+      if (!result.url) {
+        setLoading(false);
+        return;
+      }
       const preload = new Image();
       preload.onload = () => {
         const info: SpriteInfo = {
@@ -56,25 +71,46 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
         spriteRef.current = info;
         setSprite(info);
         setOffsetPx(0);
+        setLoading(false);
       };
+      preload.onerror = () => setLoading(false);
       preload.src = result.url;
     });
   }, [model.uid]);
+
+  const handleMouseEnter = useCallback(() => {
+    loadSprite();
+  }, [loadSprite]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const card = cardRef.current;
     const info = spriteRef.current;
     if (!card || !info) return;
-    const rect = card.getBoundingClientRect();
-    const w = rect.width;
-    const x = (e.clientX - rect.left) / w;
-    const index = Math.min(Math.floor(x * SPRITE_FRAME_COUNT), SPRITE_FRAME_COUNT - 1);
-    const bgW = info.naturalWidth * (w / info.naturalHeight);
-    const shift = (index + 0.5) * (bgW / SPRITE_FRAME_COUNT) - w / 2;
-    setOffsetPx(-shift);
+    setOffsetPx(updateSpriteFromClientX(card, info, e.clientX));
   }, []);
 
   const handleMouseLeave = useCallback(() => {
+    spriteRef.current = null;
+    setSprite(null);
+    setOffsetPx(0);
+  }, []);
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLDivElement>) => {
+      if (e.touches.length === 0) return;
+      loadSprite();
+    },
+    [loadSprite],
+  );
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const card = cardRef.current;
+    const info = spriteRef.current;
+    if (!card || !info || e.touches.length === 0) return;
+    setOffsetPx(updateSpriteFromClientX(card, info, e.touches[0].clientX));
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
     spriteRef.current = null;
     setSprite(null);
     setOffsetPx(0);
@@ -101,8 +137,17 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
       onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 bg-muted"
     >
+      {/* Loading line */}
+      {loading && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 z-20 overflow-hidden">
+          <div className="h-full w-full bg-primary animate-pulse" />
+        </div>
+      )}
       {/* Spritesheet or static thumbnail */}
       {sprite ? (
         <div
