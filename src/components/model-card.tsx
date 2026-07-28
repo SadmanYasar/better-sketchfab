@@ -69,7 +69,10 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
         }
         const preload = new Image();
         preload.onload = () => {
-          if (gen !== genRef.current) return;
+          if (gen !== genRef.current) {
+            setLoading(false);
+            return;
+          }
           const info: SpriteInfo = {
             url: result.url,
             naturalWidth: preload.naturalWidth,
@@ -108,10 +111,12 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
 
   const clearSprite = useCallback(() => {
     genRef.current++;
+    pendingFetches.current.delete(model.uid);
     spriteRef.current = null;
     setSprite(null);
     setOffsetPx(0);
-  }, []);
+    setLoading(false);
+  }, [model.uid]);
 
   const handleMouseLeave = useCallback(() => {
     clearSprite();
