@@ -31,8 +31,9 @@ interface SpriteInfo {
 function updateSpriteFromClientX(card: HTMLDivElement, info: SpriteInfo, clientX: number) {
   const rect = card.getBoundingClientRect();
   const w = rect.width;
+  if (w <= 0) return 0;
   const x = (clientX - rect.left) / w;
-  const index = Math.min(Math.floor(x * SPRITE_FRAME_COUNT), SPRITE_FRAME_COUNT - 1);
+  const index = Math.max(0, Math.min(Math.floor(x * SPRITE_FRAME_COUNT), SPRITE_FRAME_COUNT - 1));
   const bgW = info.naturalWidth * (w / info.naturalHeight);
   const shift = (index + 0.5) * (bgW / SPRITE_FRAME_COUNT) - w / 2;
   return -shift;
@@ -41,7 +42,9 @@ function updateSpriteFromClientX(card: HTMLDivElement, info: SpriteInfo, clientX
 export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const spriteCache = useRef<Map<string, SpriteInfo>>(new Map());
+  const pendingFetches = useRef<Map<string, Promise<void>>>(new Map());
   const spriteRef = useRef<SpriteInfo | null>(null);
+  const genRef = useRef(0);
   const [sprite, setSprite] = useState<SpriteInfo | null>(null);
   const [offsetPx, setOffsetPx] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -54,28 +57,42 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
       setOffsetPx(0);
       return;
     }
+    const inflight = pendingFetches.current.get(model.uid);
+    if (inflight) return;
     setLoading(true);
-    fetchModelSpritesheet({ data: { uid: model.uid } }).then((result) => {
-      if (!result.url) {
-        setLoading(false);
-        return;
-      }
-      const preload = new Image();
-      preload.onload = () => {
-        const info: SpriteInfo = {
-          url: result.url,
-          naturalWidth: preload.naturalWidth,
-          naturalHeight: preload.naturalHeight,
+    const gen = ++genRef.current;
+    const promise = fetchModelSpritesheet({ data: { uid: model.uid } })
+      .then((result) => {
+        if (!result.url) {
+          setLoading(false);
+          return;
+        }
+        const preload = new Image();
+        preload.onload = () => {
+          if (gen !== genRef.current) return;
+          const info: SpriteInfo = {
+            url: result.url,
+            naturalWidth: preload.naturalWidth,
+            naturalHeight: preload.naturalHeight,
+          };
+          spriteCache.current.set(model.uid, info);
+          spriteRef.current = info;
+          setSprite(info);
+          setOffsetPx(0);
+          setLoading(false);
         };
-        spriteCache.current.set(model.uid, info);
-        spriteRef.current = info;
-        setSprite(info);
-        setOffsetPx(0);
+        preload.onerror = () => {
+          setLoading(false);
+        };
+        preload.src = result.url;
+      })
+      .catch(() => {
         setLoading(false);
-      };
-      preload.onerror = () => setLoading(false);
-      preload.src = result.url;
-    });
+      })
+      .finally(() => {
+        pendingFetches.current.delete(model.uid);
+      });
+    pendingFetches.current.set(model.uid, promise);
   }, [model.uid]);
 
   const handleMouseEnter = useCallback(() => {
@@ -89,11 +106,16 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
     setOffsetPx(updateSpriteFromClientX(card, info, e.clientX));
   }, []);
 
-  const handleMouseLeave = useCallback(() => {
+  const clearSprite = useCallback(() => {
+    genRef.current++;
     spriteRef.current = null;
     setSprite(null);
     setOffsetPx(0);
   }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    clearSprite();
+  }, [clearSprite]);
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent<HTMLDivElement>) => {
@@ -107,14 +129,13 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
     const card = cardRef.current;
     const info = spriteRef.current;
     if (!card || !info || e.touches.length === 0) return;
+    e.preventDefault();
     setOffsetPx(updateSpriteFromClientX(card, info, e.touches[0].clientX));
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    spriteRef.current = null;
-    setSprite(null);
-    setOffsetPx(0);
-  }, []);
+    clearSprite();
+  }, [clearSprite]);
 
   const thumbnail = getHighestResThumbnail(model);
 
@@ -140,7 +161,8 @@ export const ModelCard: React.FC<ModelCardProps> = ({ model, onSelectModel }) =>
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 bg-muted"
+      onTouchCancel={handleTouchEnd}
+      className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 bg-muted touch-pan-y"
     >
       {/* Loading line */}
       {loading && (
