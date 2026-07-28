@@ -90,6 +90,15 @@
   --ring: #32b8e4;
 }
 
+@keyframes indeterminate-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
 @layer base {
   * {
     border-color: var(--border);
