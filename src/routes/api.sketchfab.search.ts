@@ -9,7 +9,10 @@ export const Route = createFileRoute('/api/sketchfab/search')({
         const queryParams = Object.fromEntries(url.searchParams.entries());
         const res = await searchSketchfabModels({ data: queryParams });
         return new Response(JSON.stringify(res), {
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=3600',
+          },
         });
       },
     },

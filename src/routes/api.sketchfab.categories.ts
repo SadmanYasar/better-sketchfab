@@ -7,7 +7,10 @@ export const Route = createFileRoute('/api/sketchfab/categories')({
       GET: async () => {
         const res = await fetchSketchfabCategories();
         return new Response(JSON.stringify(res), {
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=60, s-maxage=86400, stale-while-revalidate=3600',
+          },
         });
       },
     },

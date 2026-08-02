@@ -6,3 +6,5 @@ coverage/
 *.log
 .env*
 !.env.example
+worker-configuration.d.ts
+.wrangler/

@@ -12,8 +12,14 @@ export const Route = createFileRoute('/api/sketchfab/metadata/$uid')({
         const token = (authHeader ? authHeader.replace('Bearer ', '') : '') || tokenQuery;
 
         const res = await fetchModelMetadata({ data: { uid, sketchfabToken: token } });
+        const cacheControl = token
+          ? 'private, no-store'
+          : 'public, max-age=60, s-maxage=3600, stale-while-revalidate=3600';
         return new Response(JSON.stringify(res), {
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': cacheControl,
+          },
         });
       },
     },

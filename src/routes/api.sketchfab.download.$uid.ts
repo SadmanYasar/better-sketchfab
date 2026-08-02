@@ -15,7 +15,10 @@ export const Route = createFileRoute('/api/sketchfab/download/$uid')({
 
         const res = await fetchSketchfabDownloadUrl({ data: { uid, token } });
         return new Response(JSON.stringify(res), {
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'private, no-store',
+          },
         });
       },
     },

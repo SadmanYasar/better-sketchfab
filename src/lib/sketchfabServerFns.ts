@@ -1,7 +1,37 @@
+import { env } from 'cloudflare:workers';
 import { createServerFn } from '@tanstack/react-start';
 import { unzip } from 'unzipit';
 import { FEATURED_MODELS, MOCK_ADVANCED_METADATA } from '../data/mockModels';
 import type { AdvancedModelMetadata } from '../types';
+
+const METADATA_CACHE_TTL_SECONDS = 60 * 60 * 24;
+
+function metadataCacheKey(uid: string) {
+  return `metadata:v1:${uid}`;
+}
+
+async function getCachedMetadata(uid: string): Promise<AdvancedModelMetadata | null> {
+  try {
+    const cached = await env.METADATA_CACHE.get<AdvancedModelMetadata>(
+      metadataCacheKey(uid),
+      'json',
+    );
+    return cached;
+  } catch (err) {
+    console.warn('KV metadata cache read failed:', err);
+    return null;
+  }
+}
+
+async function setCachedMetadata(uid: string, metadata: AdvancedModelMetadata) {
+  try {
+    await env.METADATA_CACHE.put(metadataCacheKey(uid), JSON.stringify(metadata), {
+      expirationTtl: METADATA_CACHE_TTL_SECONDS,
+    });
+  } catch (err) {
+    console.warn('KV metadata cache write failed:', err);
+  }
+}
 
 async function fetchWithSketchfabAuth(url: string, rawToken: string, options: any = {}) {
   const cleaned = rawToken.replace(/^(Bearer|Token)\s+/i, '').trim();
@@ -273,6 +303,11 @@ export const fetchModelMetadata = createServerFn({ method: 'GET' })
     const { uid, sketchfabToken = '' } = data;
 
     try {
+      const cached = await getCachedMetadata(uid);
+      if (cached) {
+        return cached;
+      }
+
       let modelData: any = null;
       const sfModelRes = await fetch(`https://api.sketchfab.com/v3/models/${uid}`, {
         headers: { Accept: 'application/json' },
@@ -343,6 +378,8 @@ export const fetchModelMetadata = createServerFn({ method: 'GET' })
                     version: gltf.asset?.version || '2.0',
                   },
                 };
+
+                await setCachedMetadata(uid, verifiedMetadata);
 
                 return verifiedMetadata;
               }

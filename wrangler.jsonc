@@ -3,5 +3,11 @@
   "name": "sketchfab-model-inspector",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry"
+  "main": "@tanstack/react-start/server-entry",
+  "kv_namespaces": [
+    {
+      "binding": "METADATA_CACHE",
+      "id": "00000000000000000000000000000000"
+    }
+  ]
 }

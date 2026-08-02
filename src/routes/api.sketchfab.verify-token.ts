@@ -8,7 +8,10 @@ export const Route = createFileRoute('/api/sketchfab/verify-token')({
         const body = (await request.json().catch(() => ({}))) as { token?: string };
         const res = await verifySketchfabToken({ data: { token: body.token || '' } });
         return new Response(JSON.stringify(res), {
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'private, no-store',
+          },
         });
       },
     },

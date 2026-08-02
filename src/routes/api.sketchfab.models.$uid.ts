@@ -8,7 +8,10 @@ export const Route = createFileRoute('/api/sketchfab/models/$uid')({
         const { uid } = params;
         const res = await fetchSketchfabModelDetails({ data: { uid } });
         return new Response(JSON.stringify(res), {
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=60, s-maxage=3600, stale-while-revalidate=3600',
+          },
         });
       },
     },

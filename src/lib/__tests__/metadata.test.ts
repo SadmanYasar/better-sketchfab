@@ -1,4 +1,4 @@
-import { fetchMock } from 'cloudflare:test';
+import { env, fetchMock } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fetchModelMetadata } from '../sketchfabServerFns';
 import { callServerFn } from './helpers/callServerFn';
@@ -108,5 +108,77 @@ describe('fetchModelMetadata', () => {
     expect(stats.meshesCount).toBe(1);
     expect(stats.primitivesCount).toBe(1);
     expect((result as any).basic.downloadSize).toBe(512);
+  });
+
+  it('serves verified metadata from KV cache without re-hitting origin', async () => {
+    const zip = buildMinimalZip('scene.gltf', gltfJson);
+    const kv = env.METADATA_CACHE;
+
+    let originHits = 0;
+
+    fetchMock
+      .get('https://api.sketchfab.com')
+      .intercept({ path: '/v3/models/meta2' })
+      .reply(() => {
+        originHits++;
+        return { statusCode: 200, data: modelApiResponse };
+      })
+      .persist();
+
+    fetchMock
+      .get('https://api.sketchfab.com')
+      .intercept({ path: '/v3/models/meta2/download' })
+      .reply(() => {
+        originHits++;
+        return { statusCode: 200, data: downloadResponse };
+      })
+      .persist();
+
+    fetchMock
+      .get('https://cdn.sketchfab.com')
+      .intercept({ path: '/zipfile/sample.glb' })
+      .reply((opts: any) => {
+        originHits++;
+        if (opts.method === 'HEAD') {
+          return {
+            statusCode: 200,
+            data: '',
+            responseOptions: { headers: { 'Content-Length': String(zip.length) } },
+          };
+        }
+        const range = opts.headers?.range || opts.headers?.Range;
+        if (typeof range === 'string' && range.startsWith('bytes=')) {
+          const [startStr, endStr] = range.replace('bytes=', '').split('-');
+          const start = parseInt(startStr, 10);
+          const end = endStr ? parseInt(endStr, 10) : zip.length - 1;
+          return {
+            statusCode: 206,
+            data: zip.slice(start, end + 1),
+            responseOptions: {
+              headers: { 'Content-Range': `bytes ${start}-${end}/${zip.length}` },
+            },
+          };
+        }
+        return { statusCode: 200, data: zip };
+      })
+      .persist();
+
+    const first = await callServerFn(fetchModelMetadata, {
+      uid: 'meta2',
+      sketchfabToken: 'tok123',
+    });
+    expect(first).toMatchObject({ isVerifiedGltf: true });
+    const hitsAfterFirst = originHits;
+    expect(hitsAfterFirst).toBeGreaterThan(0);
+
+    const cached = await kv.get('metadata:v1:meta2', 'json');
+    expect(cached).toMatchObject({ isVerifiedGltf: true });
+
+    const second = await callServerFn(fetchModelMetadata, {
+      uid: 'meta2',
+      sketchfabToken: 'tok123',
+    });
+    expect(second).toEqual(first);
+    expect(originHits).toBe(hitsAfterFirst);
   });
 });
