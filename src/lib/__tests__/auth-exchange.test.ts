@@ -1,6 +1,13 @@
 import { fetchMock } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buildSketchfabAuthUrl, exchangeSketchfabCode, responseFromResult } from '../sketchfabAuth';
+import {
+  buildSketchfabAuthUrl,
+  exchangeSketchfabCode,
+  readCookie,
+  responseFromResult,
+  SKETCHFAB_STATE_COOKIE,
+  verifyOAuthState,
+} from '../sketchfabAuth';
 
 describe('exchangeSketchfabCode', () => {
   beforeEach(() => {
@@ -82,5 +89,50 @@ describe('buildSketchfabAuthUrl', () => {
     const result = buildSketchfabAuthUrl({ origin: 'http://localhost' });
     expect(result.status).toBe(400);
     expect(result.body.error).toBe('NO_CLIENT_ID');
+  });
+
+  it('generates a state and sets it in the state cookie', () => {
+    const result = buildSketchfabAuthUrl({
+      origin: 'http://localhost',
+      clientId: 'custom-cid',
+    });
+    expect(result.status).toBe(200);
+    expect(typeof result.state).toBe('string');
+    expect(result.state).toHaveLength(36);
+    expect(result.body.url).toContain(`state=${result.state}`);
+    expect(result.setCookie).toContain(`${SKETCHFAB_STATE_COOKIE}=${result.state}`);
+    expect(result.setCookie).toContain('HttpOnly');
+
+    const res = responseFromResult(result as any);
+    expect(res.headers.get('Set-Cookie')).toContain(SKETCHFAB_STATE_COOKIE);
+  });
+});
+
+describe('verifyOAuthState', () => {
+  it('accepts a matching state', () => {
+    expect(verifyOAuthState('st-123', 'st-123')).toBe(true);
+  });
+
+  it('rejects a mismatched state', () => {
+    expect(verifyOAuthState('st-123', 'st-456')).toBe(false);
+  });
+
+  it('rejects empty or missing state', () => {
+    expect(verifyOAuthState('', 'st-123')).toBe(false);
+    expect(verifyOAuthState(null as any, 'st-123')).toBe(false);
+    expect(verifyOAuthState('st-123', null)).toBe(false);
+  });
+});
+
+describe('readCookie', () => {
+  it('reads a cookie value from a cookie header', () => {
+    expect(
+      readCookie('foo=bar; sketchfab_oauth_state=st-123; baz=qux', SKETCHFAB_STATE_COOKIE),
+    ).toBe('st-123');
+  });
+
+  it('returns null when cookie is absent', () => {
+    expect(readCookie('foo=bar', SKETCHFAB_STATE_COOKIE)).toBeNull();
+    expect(readCookie(null, SKETCHFAB_STATE_COOKIE)).toBeNull();
   });
 });

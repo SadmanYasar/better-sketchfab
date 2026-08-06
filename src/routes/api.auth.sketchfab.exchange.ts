@@ -6,12 +6,10 @@ export const Route = createFileRoute('/api/auth/sketchfab/exchange')({
     handlers: {
       POST: async ({ request }) => {
         const body = (await request.json().catch(() => ({}))) as Record<string, any>;
-        const { code, clientId, clientSecret, redirectUri } = body;
+        const { code, redirectUri } = body;
 
         const result = await exchangeSketchfabCode({
           code,
-          clientId,
-          clientSecret,
           redirectUri,
         });
 

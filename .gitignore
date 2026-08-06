@@ -6,5 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+.dev.vars
+*.tsbuildinfo
+.tanstack/
 worker-configuration.d.ts
 .wrangler/

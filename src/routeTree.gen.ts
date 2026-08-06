@@ -8,109 +8,108 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
-import { Route as ApiSketchfabCategoriesRouteImport } from './routes/api.sketchfab.categories'
-import { Route as ApiSketchfabSearchRouteImport } from './routes/api.sketchfab.search'
-import { Route as ApiSketchfabVerifyTokenRouteImport } from './routes/api.sketchfab.verify-token'
-import { Route as ApiAuthSketchfabExchangeRouteImport } from './routes/api.auth.sketchfab.exchange'
-import { Route as ApiAuthSketchfabUrlRouteImport } from './routes/api.auth.sketchfab.url'
-import { Route as ApiSketchfabDownloadUidRouteImport } from './routes/api.sketchfab.download.$uid'
-import { Route as ApiSketchfabMetadataUidRouteImport } from './routes/api.sketchfab.metadata.$uid'
-import { Route as ApiSketchfabModelsUidRouteImport } from './routes/api.sketchfab.models.$uid'
+import { Route as rootRouteImport } from './routes/__root';
+import { Route as ApiAuthSketchfabExchangeRouteImport } from './routes/api.auth.sketchfab.exchange';
+import { Route as ApiAuthSketchfabUrlRouteImport } from './routes/api.auth.sketchfab.url';
+import { Route as ApiSketchfabCategoriesRouteImport } from './routes/api.sketchfab.categories';
+import { Route as ApiSketchfabDownloadUidRouteImport } from './routes/api.sketchfab.download.$uid';
+import { Route as ApiSketchfabMetadataUidRouteImport } from './routes/api.sketchfab.metadata.$uid';
+import { Route as ApiSketchfabModelsUidRouteImport } from './routes/api.sketchfab.models.$uid';
+import { Route as ApiSketchfabSearchRouteImport } from './routes/api.sketchfab.search';
+import { Route as ApiSketchfabVerifyTokenRouteImport } from './routes/api.sketchfab.verify-token';
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback';
+import { Route as IndexRouteImport } from './routes/index';
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApiSketchfabCategoriesRoute = ApiSketchfabCategoriesRouteImport.update({
   id: '/api/sketchfab/categories',
   path: '/api/sketchfab/categories',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApiSketchfabSearchRoute = ApiSketchfabSearchRouteImport.update({
   id: '/api/sketchfab/search',
   path: '/api/sketchfab/search',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApiSketchfabVerifyTokenRoute = ApiSketchfabVerifyTokenRouteImport.update({
   id: '/api/sketchfab/verify-token',
   path: '/api/sketchfab/verify-token',
   getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthSketchfabExchangeRoute =
-  ApiAuthSketchfabExchangeRouteImport.update({
-    id: '/api/auth/sketchfab/exchange',
-    path: '/api/auth/sketchfab/exchange',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+} as any);
+const ApiAuthSketchfabExchangeRoute = ApiAuthSketchfabExchangeRouteImport.update({
+  id: '/api/auth/sketchfab/exchange',
+  path: '/api/auth/sketchfab/exchange',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const ApiAuthSketchfabUrlRoute = ApiAuthSketchfabUrlRouteImport.update({
   id: '/api/auth/sketchfab/url',
   path: '/api/auth/sketchfab/url',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApiSketchfabDownloadUidRoute = ApiSketchfabDownloadUidRouteImport.update({
   id: '/api/sketchfab/download/$uid',
   path: '/api/sketchfab/download/$uid',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApiSketchfabMetadataUidRoute = ApiSketchfabMetadataUidRouteImport.update({
   id: '/api/sketchfab/metadata/$uid',
   path: '/api/sketchfab/metadata/$uid',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const ApiSketchfabModelsUidRoute = ApiSketchfabModelsUidRouteImport.update({
   id: '/api/sketchfab/models/$uid',
   path: '/api/sketchfab/models/$uid',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/auth/callback': typeof AuthCallbackRoute
-  '/api/sketchfab/categories': typeof ApiSketchfabCategoriesRoute
-  '/api/sketchfab/search': typeof ApiSketchfabSearchRoute
-  '/api/sketchfab/verify-token': typeof ApiSketchfabVerifyTokenRoute
-  '/api/auth/sketchfab/exchange': typeof ApiAuthSketchfabExchangeRoute
-  '/api/auth/sketchfab/url': typeof ApiAuthSketchfabUrlRoute
-  '/api/sketchfab/download/$uid': typeof ApiSketchfabDownloadUidRoute
-  '/api/sketchfab/metadata/$uid': typeof ApiSketchfabMetadataUidRoute
-  '/api/sketchfab/models/$uid': typeof ApiSketchfabModelsUidRoute
+  '/': typeof IndexRoute;
+  '/auth/callback': typeof AuthCallbackRoute;
+  '/api/sketchfab/categories': typeof ApiSketchfabCategoriesRoute;
+  '/api/sketchfab/search': typeof ApiSketchfabSearchRoute;
+  '/api/sketchfab/verify-token': typeof ApiSketchfabVerifyTokenRoute;
+  '/api/auth/sketchfab/exchange': typeof ApiAuthSketchfabExchangeRoute;
+  '/api/auth/sketchfab/url': typeof ApiAuthSketchfabUrlRoute;
+  '/api/sketchfab/download/$uid': typeof ApiSketchfabDownloadUidRoute;
+  '/api/sketchfab/metadata/$uid': typeof ApiSketchfabMetadataUidRoute;
+  '/api/sketchfab/models/$uid': typeof ApiSketchfabModelsUidRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/auth/callback': typeof AuthCallbackRoute
-  '/api/sketchfab/categories': typeof ApiSketchfabCategoriesRoute
-  '/api/sketchfab/search': typeof ApiSketchfabSearchRoute
-  '/api/sketchfab/verify-token': typeof ApiSketchfabVerifyTokenRoute
-  '/api/auth/sketchfab/exchange': typeof ApiAuthSketchfabExchangeRoute
-  '/api/auth/sketchfab/url': typeof ApiAuthSketchfabUrlRoute
-  '/api/sketchfab/download/$uid': typeof ApiSketchfabDownloadUidRoute
-  '/api/sketchfab/metadata/$uid': typeof ApiSketchfabMetadataUidRoute
-  '/api/sketchfab/models/$uid': typeof ApiSketchfabModelsUidRoute
+  '/': typeof IndexRoute;
+  '/auth/callback': typeof AuthCallbackRoute;
+  '/api/sketchfab/categories': typeof ApiSketchfabCategoriesRoute;
+  '/api/sketchfab/search': typeof ApiSketchfabSearchRoute;
+  '/api/sketchfab/verify-token': typeof ApiSketchfabVerifyTokenRoute;
+  '/api/auth/sketchfab/exchange': typeof ApiAuthSketchfabExchangeRoute;
+  '/api/auth/sketchfab/url': typeof ApiAuthSketchfabUrlRoute;
+  '/api/sketchfab/download/$uid': typeof ApiSketchfabDownloadUidRoute;
+  '/api/sketchfab/metadata/$uid': typeof ApiSketchfabMetadataUidRoute;
+  '/api/sketchfab/models/$uid': typeof ApiSketchfabModelsUidRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/auth/callback': typeof AuthCallbackRoute
-  '/api/sketchfab/categories': typeof ApiSketchfabCategoriesRoute
-  '/api/sketchfab/search': typeof ApiSketchfabSearchRoute
-  '/api/sketchfab/verify-token': typeof ApiSketchfabVerifyTokenRoute
-  '/api/auth/sketchfab/exchange': typeof ApiAuthSketchfabExchangeRoute
-  '/api/auth/sketchfab/url': typeof ApiAuthSketchfabUrlRoute
-  '/api/sketchfab/download/$uid': typeof ApiSketchfabDownloadUidRoute
-  '/api/sketchfab/metadata/$uid': typeof ApiSketchfabMetadataUidRoute
-  '/api/sketchfab/models/$uid': typeof ApiSketchfabModelsUidRoute
+  __root__: typeof rootRouteImport;
+  '/': typeof IndexRoute;
+  '/auth/callback': typeof AuthCallbackRoute;
+  '/api/sketchfab/categories': typeof ApiSketchfabCategoriesRoute;
+  '/api/sketchfab/search': typeof ApiSketchfabSearchRoute;
+  '/api/sketchfab/verify-token': typeof ApiSketchfabVerifyTokenRoute;
+  '/api/auth/sketchfab/exchange': typeof ApiAuthSketchfabExchangeRoute;
+  '/api/auth/sketchfab/url': typeof ApiAuthSketchfabUrlRoute;
+  '/api/sketchfab/download/$uid': typeof ApiSketchfabDownloadUidRoute;
+  '/api/sketchfab/metadata/$uid': typeof ApiSketchfabMetadataUidRoute;
+  '/api/sketchfab/models/$uid': typeof ApiSketchfabModelsUidRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
     | '/'
     | '/auth/callback'
@@ -121,8 +120,8 @@ export interface FileRouteTypes {
     | '/api/auth/sketchfab/url'
     | '/api/sketchfab/download/$uid'
     | '/api/sketchfab/metadata/$uid'
-    | '/api/sketchfab/models/$uid'
-  fileRoutesByTo: FileRoutesByTo
+    | '/api/sketchfab/models/$uid';
+  fileRoutesByTo: FileRoutesByTo;
   to:
     | '/'
     | '/auth/callback'
@@ -133,7 +132,7 @@ export interface FileRouteTypes {
     | '/api/auth/sketchfab/url'
     | '/api/sketchfab/download/$uid'
     | '/api/sketchfab/metadata/$uid'
-    | '/api/sketchfab/models/$uid'
+    | '/api/sketchfab/models/$uid';
   id:
     | '__root__'
     | '/'
@@ -145,94 +144,94 @@ export interface FileRouteTypes {
     | '/api/auth/sketchfab/url'
     | '/api/sketchfab/download/$uid'
     | '/api/sketchfab/metadata/$uid'
-    | '/api/sketchfab/models/$uid'
-  fileRoutesById: FileRoutesById
+    | '/api/sketchfab/models/$uid';
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AuthCallbackRoute: typeof AuthCallbackRoute
-  ApiSketchfabCategoriesRoute: typeof ApiSketchfabCategoriesRoute
-  ApiSketchfabSearchRoute: typeof ApiSketchfabSearchRoute
-  ApiSketchfabVerifyTokenRoute: typeof ApiSketchfabVerifyTokenRoute
-  ApiAuthSketchfabExchangeRoute: typeof ApiAuthSketchfabExchangeRoute
-  ApiAuthSketchfabUrlRoute: typeof ApiAuthSketchfabUrlRoute
-  ApiSketchfabDownloadUidRoute: typeof ApiSketchfabDownloadUidRoute
-  ApiSketchfabMetadataUidRoute: typeof ApiSketchfabMetadataUidRoute
-  ApiSketchfabModelsUidRoute: typeof ApiSketchfabModelsUidRoute
+  IndexRoute: typeof IndexRoute;
+  AuthCallbackRoute: typeof AuthCallbackRoute;
+  ApiSketchfabCategoriesRoute: typeof ApiSketchfabCategoriesRoute;
+  ApiSketchfabSearchRoute: typeof ApiSketchfabSearchRoute;
+  ApiSketchfabVerifyTokenRoute: typeof ApiSketchfabVerifyTokenRoute;
+  ApiAuthSketchfabExchangeRoute: typeof ApiAuthSketchfabExchangeRoute;
+  ApiAuthSketchfabUrlRoute: typeof ApiAuthSketchfabUrlRoute;
+  ApiSketchfabDownloadUidRoute: typeof ApiSketchfabDownloadUidRoute;
+  ApiSketchfabMetadataUidRoute: typeof ApiSketchfabMetadataUidRoute;
+  ApiSketchfabModelsUidRoute: typeof ApiSketchfabModelsUidRoute;
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/';
+      path: '/';
+      fullPath: '/';
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/auth/callback';
+      path: '/auth/callback';
+      fullPath: '/auth/callback';
+      preLoaderRoute: typeof AuthCallbackRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/api/sketchfab/categories': {
-      id: '/api/sketchfab/categories'
-      path: '/api/sketchfab/categories'
-      fullPath: '/api/sketchfab/categories'
-      preLoaderRoute: typeof ApiSketchfabCategoriesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/api/sketchfab/categories';
+      path: '/api/sketchfab/categories';
+      fullPath: '/api/sketchfab/categories';
+      preLoaderRoute: typeof ApiSketchfabCategoriesRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/api/sketchfab/search': {
-      id: '/api/sketchfab/search'
-      path: '/api/sketchfab/search'
-      fullPath: '/api/sketchfab/search'
-      preLoaderRoute: typeof ApiSketchfabSearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/api/sketchfab/search';
+      path: '/api/sketchfab/search';
+      fullPath: '/api/sketchfab/search';
+      preLoaderRoute: typeof ApiSketchfabSearchRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/api/sketchfab/verify-token': {
-      id: '/api/sketchfab/verify-token'
-      path: '/api/sketchfab/verify-token'
-      fullPath: '/api/sketchfab/verify-token'
-      preLoaderRoute: typeof ApiSketchfabVerifyTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/api/sketchfab/verify-token';
+      path: '/api/sketchfab/verify-token';
+      fullPath: '/api/sketchfab/verify-token';
+      preLoaderRoute: typeof ApiSketchfabVerifyTokenRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/api/auth/sketchfab/exchange': {
-      id: '/api/auth/sketchfab/exchange'
-      path: '/api/auth/sketchfab/exchange'
-      fullPath: '/api/auth/sketchfab/exchange'
-      preLoaderRoute: typeof ApiAuthSketchfabExchangeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/api/auth/sketchfab/exchange';
+      path: '/api/auth/sketchfab/exchange';
+      fullPath: '/api/auth/sketchfab/exchange';
+      preLoaderRoute: typeof ApiAuthSketchfabExchangeRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/api/auth/sketchfab/url': {
-      id: '/api/auth/sketchfab/url'
-      path: '/api/auth/sketchfab/url'
-      fullPath: '/api/auth/sketchfab/url'
-      preLoaderRoute: typeof ApiAuthSketchfabUrlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/api/auth/sketchfab/url';
+      path: '/api/auth/sketchfab/url';
+      fullPath: '/api/auth/sketchfab/url';
+      preLoaderRoute: typeof ApiAuthSketchfabUrlRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/api/sketchfab/download/$uid': {
-      id: '/api/sketchfab/download/$uid'
-      path: '/api/sketchfab/download/$uid'
-      fullPath: '/api/sketchfab/download/$uid'
-      preLoaderRoute: typeof ApiSketchfabDownloadUidRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/api/sketchfab/download/$uid';
+      path: '/api/sketchfab/download/$uid';
+      fullPath: '/api/sketchfab/download/$uid';
+      preLoaderRoute: typeof ApiSketchfabDownloadUidRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/api/sketchfab/metadata/$uid': {
-      id: '/api/sketchfab/metadata/$uid'
-      path: '/api/sketchfab/metadata/$uid'
-      fullPath: '/api/sketchfab/metadata/$uid'
-      preLoaderRoute: typeof ApiSketchfabMetadataUidRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/api/sketchfab/metadata/$uid';
+      path: '/api/sketchfab/metadata/$uid';
+      fullPath: '/api/sketchfab/metadata/$uid';
+      preLoaderRoute: typeof ApiSketchfabMetadataUidRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/api/sketchfab/models/$uid': {
-      id: '/api/sketchfab/models/$uid'
-      path: '/api/sketchfab/models/$uid'
-      fullPath: '/api/sketchfab/models/$uid'
-      preLoaderRoute: typeof ApiSketchfabModelsUidRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/api/sketchfab/models/$uid';
+      path: '/api/sketchfab/models/$uid';
+      fullPath: '/api/sketchfab/models/$uid';
+      preLoaderRoute: typeof ApiSketchfabModelsUidRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
@@ -247,16 +246,17 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSketchfabDownloadUidRoute: ApiSketchfabDownloadUidRoute,
   ApiSketchfabMetadataUidRoute: ApiSketchfabMetadataUidRoute,
   ApiSketchfabModelsUidRoute: ApiSketchfabModelsUidRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
 
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { createStart } from '@tanstack/react-start';
+import type { getRouter } from './router.tsx';
+
 declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
+    ssr: true;
+    router: Awaited<ReturnType<typeof getRouter>>;
   }
 }

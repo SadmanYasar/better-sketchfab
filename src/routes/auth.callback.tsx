@@ -1,4 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
+import {
+  exchangeSketchfabCode,
+  getSketchfabCredentials,
+  readCookie,
+  SKETCHFAB_STATE_COOKIE,
+  verifyOAuthState,
+} from '../lib/sketchfabAuth';
 
 export const Route = createFileRoute('/auth/callback')({
   server: {
@@ -6,8 +13,26 @@ export const Route = createFileRoute('/auth/callback')({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const code = url.searchParams.get('code');
+        const state = url.searchParams.get('state');
         const error = url.searchParams.get('error');
         const errorDescription = url.searchParams.get('error_description');
+
+        const storedState = readCookie(request.headers.get('cookie'), SKETCHFAB_STATE_COOKIE);
+
+        if (!verifyOAuthState(state, storedState)) {
+          return new Response(
+            `<!DOCTYPE html>
+<html>
+  <head><title>Sketchfab Auth Error</title></head>
+  <body style="background:#0A0A0B;color:#fff;font-family:sans-serif;padding:2rem;text-align:center;">
+    <h3 style="color:#f87171;">Authorization State Mismatch</h3>
+    <p style="color:#a1a1aa;font-size:14px;">The OAuth state parameter did not match. The authorization request may have been tampered with. Please try again.</p>
+    <script>setTimeout(() => window.close(), 4000);</script>
+  </body>
+</html>`,
+            { headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+          );
+        }
 
         if (error) {
           return new Response(
@@ -29,8 +54,8 @@ export const Route = createFileRoute('/auth/callback')({
         }
 
         const redirectUri = `${url.origin}/auth/callback`;
-        const clientId = process.env.SKETCHFAB_CLIENT_ID;
-        const clientSecret = process.env.SKETCHFAB_CLIENT_SECRET;
+
+        const { clientId, clientSecret } = getSketchfabCredentials();
 
         if (!clientId || !clientSecret) {
           return new Response(
@@ -56,22 +81,10 @@ export const Route = createFileRoute('/auth/callback')({
         }
 
         try {
-          const tokenRes = await fetch('https://sketchfab.com/oauth2/token/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-              grant_type: 'authorization_code',
-              code,
-              client_id: clientId,
-              client_secret: clientSecret,
-              redirect_uri: redirectUri,
-            }).toString(),
-          });
+          const result = await exchangeSketchfabCode({ code, redirectUri });
 
-          if (!tokenRes.ok) {
-            const errText = await tokenRes.text();
+          if (result.status !== 200) {
+            const errText = JSON.stringify(result.body.error || result.body);
             return new Response(
               `<!DOCTYPE html>
 <html>
@@ -86,18 +99,8 @@ export const Route = createFileRoute('/auth/callback')({
             );
           }
 
-          const tokenData = await tokenRes.json();
-          const accessToken = tokenData.access_token;
-
-          let user = null;
-          if (accessToken) {
-            const userRes = await fetch('https://api.sketchfab.com/v3/me', {
-              headers: { Authorization: `Bearer ${accessToken}` },
-            });
-            if (userRes.ok) {
-              user = await userRes.json();
-            }
-          }
+          const accessToken = result.body.token as string;
+          const user = result.body.user ?? null;
 
           return new Response(
             `<!DOCTYPE html>
@@ -124,7 +127,7 @@ export const Route = createFileRoute('/auth/callback')({
             {
               headers: {
                 'Content-Type': 'text/html; charset=utf-8',
-                'Set-Cookie': `sketchfab_token=${accessToken}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${30 * 24 * 60 * 60}`,
+                ...(result.setCookie ? { 'Set-Cookie': result.setCookie } : {}),
               },
             },
           );

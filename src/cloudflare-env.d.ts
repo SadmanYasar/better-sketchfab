@@ -22,7 +22,10 @@ interface KVNamespace {
 declare module 'cloudflare:workers' {
   const env: {
     METADATA_CACHE: KVNamespace;
+    SKETCHFAB_CLIENT_ID?: string;
+    SKETCHFAB_CLIENT_SECRET?: string;
   };
+
   export { env };
 }
 
@@ -31,4 +34,3 @@ declare module 'cloudflare:test' {
     METADATA_CACHE: KVNamespace;
   }
 }
-
